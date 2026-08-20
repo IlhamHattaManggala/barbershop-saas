@@ -16,7 +16,7 @@ class PakasirService
 
     public function __construct()
     {
-        $this->apiKey = SiteSetting::getEncrypted('pakasir_api_key', 'Vbt9gVU18YnB2fq316y9XoKnhbFep4vr') ?? 'Vbt9gVU18YnB2fq316y9XoKnhbFep4vr';
+        $this->apiKey = SiteSetting::getEncrypted('pakasir_api_key', env('PAKASIR_API_KEY', '')) ?? env('PAKASIR_API_KEY', '');
         $this->merchantSlug = SiteSetting::get('pakasir_slug', 'babershopsaas') ?? 'babershopsaas';
         $this->isActive = (SiteSetting::get('pakasir_is_active', '1') === '1');
     }

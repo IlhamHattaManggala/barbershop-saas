@@ -19,7 +19,7 @@ class GatewaySettings extends Component
 
     public function mount()
     {
-        $this->pakasir_api_key = SiteSetting::getEncrypted('pakasir_api_key', 'Vbt9gVU18YnB2fq316y9XoKnhbFep4vr');
+        $this->pakasir_api_key = SiteSetting::getEncrypted('pakasir_api_key', env('PAKASIR_API_KEY', ''));
         $this->pakasir_slug = SiteSetting::get('pakasir_slug', 'babershopsaas');
         $this->pakasir_is_active = (SiteSetting::get('pakasir_is_active', '1') === '1');
     }

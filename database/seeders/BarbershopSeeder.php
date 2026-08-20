@@ -35,7 +35,7 @@ class BarbershopSeeder extends Seeder
         SiteSetting::set('footer_text', '© 2026 BarberSaaS. All rights reserved.');
 
         // Pakasir Payment Gateway Settings (Encrypted API Key)
-        SiteSetting::setEncrypted('pakasir_api_key', 'Vbt9gVU18YnB2fq316y9XoKnhbFep4vr');
+        SiteSetting::setEncrypted('pakasir_api_key', env('PAKASIR_API_KEY', 'demo_pakasir_api_key_placeholder'));
         SiteSetting::set('pakasir_slug', 'babershopsaas');
         SiteSetting::set('pakasir_is_active', '1');
 
