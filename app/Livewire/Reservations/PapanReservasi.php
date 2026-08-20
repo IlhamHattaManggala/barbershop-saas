@@ -125,6 +125,12 @@ class PapanReservasi extends Component
 
         $this->success_message = 'Reservasi Baru Berhasil Dijadwalkan!';
         $this->reset(['customer_name', 'customer_phone', 'notes']);
+
+        if (auth()->check() && auth()->user()->role === 'barber') {
+            $this->barber_user_id = auth()->id();
+        } else {
+            $this->reset('barber_user_id');
+        }
     }
 
     public function render()

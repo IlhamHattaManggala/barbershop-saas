@@ -252,13 +252,17 @@
             </div>
 
             <div>
-                <flux:label>Pilih Barber (Opsional)</flux:label>
-                <flux:select wire:model="barber_user_id">
-                    <option value="">-- Bebas (Siapa Saja) --</option>
-                    @foreach($barbers as $b)
-                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                    @endforeach
-                </flux:select>
+                <flux:label>Pilih Barber Penanggung Jawab</flux:label>
+                @if(auth()->check() && auth()->user()->role === 'barber')
+                    <flux:input value="{{ auth()->user()->name }}" disabled class="font-bold" />
+                @else
+                    <flux:select wire:model="barber_user_id">
+                        <option value="">-- Bebas (Siapa Saja Ready) --</option>
+                        @foreach($barbers as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </flux:select>
+                @endif
             </div>
 
             <div class="grid grid-cols-2 gap-3">
