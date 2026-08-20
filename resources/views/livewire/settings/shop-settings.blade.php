@@ -55,12 +55,22 @@
                     <flux:textarea wire:model="description" rows="3" placeholder="Barbershop premium spesialis fade, pompadour, dan perawatan jenggot terlengkap..." />
                 </div>
 
-                <div>
-                    <flux:label>Persentase Bagi Hasil Komisi Staf Barber (%)</flux:label>
-                    <div class="relative max-w-xs mt-1">
-                        <flux:input type="number" min="0" max="100" wire:model="barber_commission_percentage" placeholder="40" required />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <flux:label>Persentase Bagi Hasil Barber (%)</flux:label>
+                        <div class="relative mt-1">
+                            <flux:input type="number" min="0" max="100" wire:model="barber_commission_percentage" placeholder="40" required />
+                        </div>
+                        <flux:description class="mt-1">Persentase (%) komisi untuk staf barber dari setiap layanan pangkas. Contoh: 40% (Default).</flux:description>
                     </div>
-                    <flux:description class="mt-1">Atur persentase (%) bagian bagi hasil komisi pangkas untuk staf barber Anda. Contoh: 40% (Default), 50%, 30%.</flux:description>
+
+                    <div>
+                        <flux:label>Persentase Bagi Hasil Kasir (%)</flux:label>
+                        <div class="relative mt-1">
+                            <flux:input type="number" min="0" max="100" wire:model="cashier_commission_percentage" placeholder="5" required />
+                        </div>
+                        <flux:description class="mt-1">Persentase (%) insentif untuk akun kasir/tablet POS dari transaksi. Contoh: 5% (atau 0% jika gaji tetap).</flux:description>
+                    </div>
                 </div>
 
                 <!-- SECTION UPLOAD BARCODE QRIS OUTLET -->

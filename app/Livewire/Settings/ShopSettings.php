@@ -30,6 +30,8 @@ class ShopSettings extends Component
 
     public $barber_commission_percentage = 40;
 
+    public $cashier_commission_percentage = 5;
+
     public $slug = '';
 
     public $success_message = '';
@@ -46,6 +48,7 @@ class ShopSettings extends Component
             $this->current_qris_image = $tenant->qris_image ?? '';
             $this->bank_info = $tenant->bank_info ?? '';
             $this->barber_commission_percentage = $tenant->barber_commission_percentage ?? 40;
+            $this->cashier_commission_percentage = $tenant->cashier_commission_percentage ?? 5;
             $this->slug = $tenant->slug;
         } else {
             $this->name = 'Gentlemen Barber Studio';
@@ -61,7 +64,8 @@ class ShopSettings extends Component
             'address' => 'nullable|string',
             'description' => 'nullable|string|max:500',
             'bank_info' => 'nullable|string|max:500',
-            'barber_commission_percentage' => 'required|integer|min:0|max:100',
+            'barber_commission_percentage' => 'required|numeric|min:0|max:100',
+            'cashier_commission_percentage' => 'required|numeric|min:0|max:100',
             'new_logo' => 'nullable|image|max:2048',
             'new_qris_image' => 'nullable|image|max:3072',
         ]);
@@ -76,6 +80,7 @@ class ShopSettings extends Component
                 'description' => $this->description,
                 'bank_info' => $this->bank_info,
                 'barber_commission_percentage' => $this->barber_commission_percentage,
+                'cashier_commission_percentage' => $this->cashier_commission_percentage,
             ];
 
             if ($this->new_logo) {

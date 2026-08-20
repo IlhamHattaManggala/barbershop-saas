@@ -5,12 +5,13 @@ namespace App\Livewire\Reports;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\Transaction;
+use App\Models\TransactionItem;
 use App\Models\User;
 use Livewire\Component;
 
 class ReportsManager extends Component
 {
-    public $period = 'this_month'; // today, last_7_days, this_month, all
+    public $period = 'this_month'; // today, last_7_days, this_month, custom
 
     public $start_date = '';
 
@@ -26,10 +27,12 @@ class ReportsManager extends Component
     {
         $tenant = auth()->user()->tenant;
         $tenantId = auth()->user()->tenant_id;
-        $commissionPercentage = $tenant ? ($tenant->barber_commission_percentage ?? 40) : 40;
-        $commissionRate = $commissionPercentage / 100;
 
-        $query = Transaction::where('tenant_id', $tenantId)->where('status', 'completed');
+        $barberCommissionPercentage = $tenant ? (float) ($tenant->barber_commission_percentage ?? 40) : 40.0;
+        $cashierCommissionPercentage = $tenant ? (float) ($tenant->cashier_commission_percentage ?? 5) : 5.0;
+
+        $query = Transaction::where('tenant_id', $tenantId)
+            ->whereIn('status', ['paid', 'completed']);
 
         if ($this->period === 'today') {
             $query->whereDate('created_at', date('Y-m-d'));
@@ -42,48 +45,90 @@ class ReportsManager extends Component
         }
 
         $transactions = $query->latest()->get();
+        $transactionIds = $transactions->pluck('id')->toArray();
+        $transactionItems = TransactionItem::whereIn('transaction_id', $transactionIds)->get();
 
-        $totalRevenue = $transactions->sum('total_amount');
+        $totalRevenue = (float) $transactions->sum('total_amount');
         $totalTransactionsCount = $transactions->count();
 
-        // Barber Staff Performance Breakdown
+        // 1. Barber Staff Performance & Commission Report
         $barbers = User::where('tenant_id', $tenantId)->whereIn('role', ['barber', 'owner'])->get();
         $barberReports = [];
+        $totalBarberCommission = 0;
 
         foreach ($barbers as $b) {
-            $bTransactions = $transactions->where('barber_user_id', $b->id);
-            $bRevenue = $bTransactions->sum('total_amount');
-            $bCount = $bTransactions->count();
+            // Service items assigned to this barber
+            $bServiceItems = $transactionItems->where('item_type', 'service')->where('barber_user_id', $b->id);
+            $bServiceRevenue = (float) $bServiceItems->sum('subtotal');
+            $bCutCount = $bServiceItems->sum('quantity');
 
-            if ($bCount > 0 || $b->role === 'barber') {
+            // Product items sold by this barber (if any)
+            $bProductItems = $transactionItems->where('item_type', 'product')->where('barber_user_id', $b->id);
+            $bProductRevenue = (float) $bProductItems->sum('subtotal');
+
+            $bTotalRevenue = $bServiceRevenue + $bProductRevenue;
+            $bCommission = $bServiceRevenue * ($barberCommissionPercentage / 100);
+
+            if ($bCutCount > 0 || $b->role === 'barber') {
                 $barberReports[] = [
                     'id' => $b->id,
                     'name' => $b->name,
                     'role' => $b->role,
-                    'cut_count' => $bCount,
-                    'total_revenue' => $bRevenue,
-                    'estimated_commission' => $bRevenue * $commissionRate,
+                    'cut_count' => $bCutCount,
+                    'service_revenue' => $bServiceRevenue,
+                    'total_revenue' => $bTotalRevenue,
+                    'estimated_commission' => $bCommission,
                 ];
+                $totalBarberCommission += $bCommission;
             }
         }
 
-        // Top Services & Products
+        // 2. Cashier Staff Performance & Commission Report
+        $cashiers = User::where('tenant_id', $tenantId)->whereIn('role', ['cashier', 'owner'])->get();
+        $cashierReports = [];
+        $totalCashierCommission = 0;
+
+        foreach ($cashiers as $c) {
+            $cTransactions = $transactions->where('cashier_user_id', $c->id);
+            $cRevenue = (float) $cTransactions->sum('total_amount');
+            $cCount = $cTransactions->count();
+
+            $cCommission = $cRevenue * ($cashierCommissionPercentage / 100);
+
+            if ($cCount > 0 || $c->role === 'cashier') {
+                $cashierReports[] = [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'role' => $c->role,
+                    'trx_count' => $cCount,
+                    'total_revenue' => $cRevenue,
+                    'estimated_commission' => $cCommission,
+                ];
+                $totalCashierCommission += $cCommission;
+            }
+        }
+
+        // 3. Overall Staff Commission & Outlet Net Split
+        $totalStaffCommission = $totalBarberCommission + $totalCashierCommission;
+        $totalOutletNet = max(0, $totalRevenue - $totalStaffCommission);
+
         $servicesCount = Service::where('tenant_id', $tenantId)->count();
         $productsCount = Product::where('tenant_id', $tenantId)->count();
-
-        // Find registered cashier
-        $cashier = User::where('tenant_id', $tenantId)->where('role', 'cashier')->first();
-        $cashierName = $cashier ? $cashier->name : 'Rian Kasir';
 
         return view('livewire.reports.reports-manager', [
             'transactions' => $transactions,
             'totalRevenue' => $totalRevenue,
             'totalTransactionsCount' => $totalTransactionsCount,
             'barberReports' => $barberReports,
-            'commissionPercentage' => $commissionPercentage,
+            'cashierReports' => $cashierReports,
+            'barberCommissionPercentage' => $barberCommissionPercentage,
+            'cashierCommissionPercentage' => $cashierCommissionPercentage,
+            'totalBarberCommission' => $totalBarberCommission,
+            'totalCashierCommission' => $totalCashierCommission,
+            'totalStaffCommission' => $totalStaffCommission,
+            'totalOutletNet' => $totalOutletNet,
             'servicesCount' => $servicesCount,
             'productsCount' => $productsCount,
-            'cashierName' => $cashierName,
         ])->layout('layouts.app');
     }
 }

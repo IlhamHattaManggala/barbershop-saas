@@ -38,6 +38,7 @@ class Tenant extends Model
         'footer_copyright',
         'status',
         'barber_commission_percentage',
+        'cashier_commission_percentage',
         'theme_config',
     ];
 
@@ -45,6 +46,8 @@ class Tenant extends Model
         'section_order' => 'array',
         'purchased_themes' => 'array',
         'theme_config' => 'array',
+        'barber_commission_percentage' => 'decimal:2',
+        'cashier_commission_percentage' => 'decimal:2',
     ];
 
     public function hasPurchasedTheme(string $themeSlug): bool
