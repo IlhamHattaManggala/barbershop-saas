@@ -207,15 +207,33 @@
                                                 <span class="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px]">3</span>
                                                 <span>Pilih Jadwal Kedatangan</span>
                                             </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label class="block font-semibold text-zinc-700 mb-1.5">Tanggal Reservasi</label>
-                                                    <input type="date" wire:model="reservation_date" required class="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 text-xs text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none transition" />
+                                            <div>
+                                                <label class="block font-semibold text-zinc-700 mb-1.5">Tanggal Reservasi</label>
+                                                <input type="date" wire:model.live="reservation_date" required class="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 text-xs text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none transition" />
+                                            </div>
+                                            <div class="col-span-full space-y-1.5">
+                                                <label class="block font-semibold text-zinc-700">Pilih Slot Jam Cukur (Live Available Slots)</label>
+                                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 border border-zinc-100 rounded-2xl bg-zinc-50/50">
+                                                    @forelse($available_slots as $slot)
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="selectSlot('{{ $slot['time'] }}')" 
+                                                            disabled="{{ !$slot['available'] }}"
+                                                            class="py-2.5 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center cursor-pointer disabled:cursor-not-allowed {{ $start_time === $slot['time'] ? 'bg-zinc-950 text-white border-zinc-950 shadow-xs ring-2 ring-zinc-950/20' : ($slot['available'] ? 'bg-white border-zinc-200 text-zinc-800 hover:border-zinc-900 hover:bg-zinc-50' : 'bg-zinc-100 border-zinc-200/60 text-zinc-400 line-through opacity-60') }}"
+                                                            title="{{ $slot['reason'] }}"
+                                                        >
+                                                            <span>{{ $slot['time'] }}</span>
+                                                            <span class="text-[9px] font-normal {{ $start_time === $slot['time'] ? 'text-zinc-300' : ($slot['available'] ? 'text-zinc-500' : 'text-zinc-400') }}">{{ $slot['available'] ? 'Tersedia' : $slot['reason'] }}</span>
+                                                        </button>
+                                                    @empty
+                                                        <div class="col-span-full text-center text-xs text-zinc-400 py-3">
+                                                            Tidak ada slot waktu tersedia di tanggal ini.
+                                                        </div>
+                                                    @endforelse
                                                 </div>
-                                                <div>
-                                                    <label class="block font-semibold text-zinc-700 mb-1.5">Jam Mulai</label>
-                                                    <input type="time" wire:model="start_time" required class="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 text-xs text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none transition" />
-                                                </div>
+                                                @error('start_time')
+                                                    <span class="text-[11px] font-semibold text-red-600 mt-1 block">{{ $message }}</span>
+                                                @enderror
                                             </div>
                                         </div>
 

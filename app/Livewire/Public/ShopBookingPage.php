@@ -7,6 +7,8 @@ use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\BookingSlotService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -24,13 +26,15 @@ class ShopBookingPage extends Component
 
     public $reservation_date = '';
 
-    public $start_time = '10:00';
+    public $start_time = '09:00';
 
     public $notes = '';
 
     public $booking_success = false;
 
     public $created_reservation_code = '';
+
+    public array $available_slots = [];
 
     public function mount($slug)
     {
@@ -85,6 +89,54 @@ class ShopBookingPage extends Component
                 $this->tenant->footer_copyright = request()->get('fcopy');
             }
         }
+
+        // Set default active service if available
+        $firstService = Service::where('tenant_id', $this->tenant->id)->where('is_active', true)->first();
+        if ($firstService) {
+            $this->service_id = $firstService->id;
+        }
+
+        $this->loadSlots();
+    }
+
+    public function updatedServiceId()
+    {
+        $this->loadSlots();
+    }
+
+    public function updatedBarberUserId()
+    {
+        $this->loadSlots();
+    }
+
+    public function updatedReservationDate()
+    {
+        $this->loadSlots();
+    }
+
+    public function selectSlot(string $time)
+    {
+        $this->start_time = $time;
+    }
+
+    public function loadSlots()
+    {
+        $slotService = new BookingSlotService;
+        $this->available_slots = $slotService->generateAvailableSlots(
+            $this->tenant->id,
+            $this->reservation_date ?: date('Y-m-d'),
+            $this->service_id ? (int) $this->service_id : null,
+            $this->barber_user_id ? (int) $this->barber_user_id : null
+        );
+
+        // Auto-select first available time slot if current selected start_time is unavailable
+        $currentSlot = collect($this->available_slots)->firstWhere('time', $this->start_time);
+        if (! $currentSlot || ! ($currentSlot['available'] ?? false)) {
+            $firstAvail = collect($this->available_slots)->firstWhere('available', true);
+            if ($firstAvail) {
+                $this->start_time = $firstAvail['time'];
+            }
+        }
     }
 
     public function createBooking()
@@ -98,32 +150,58 @@ class ShopBookingPage extends Component
         ]);
 
         $service = Service::find($this->service_id);
-        $duration = $service ? $service->duration_minutes : 30;
+        $duration = $service ? (int) $service->duration_minutes : 30;
 
         $startTimestamp = strtotime("{$this->reservation_date} {$this->start_time}");
         $endTimestamp = $startTimestamp + ($duration * 60);
-        $endTime = date('H:i:s', $endTimestamp);
+        $startTimeFormatted = date('H:i:s', $startTimestamp);
+        $endTimeFormatted = date('H:i:s', $endTimestamp);
 
-        $code = 'RSV-'.strtoupper(Str::random(6));
+        $barberId = $this->barber_user_id ? (int) $this->barber_user_id : null;
+        $slotService = new BookingSlotService;
 
-        $reservation = Reservation::create([
-            'tenant_id' => $this->tenant->id,
-            'reservation_code' => $code,
-            'customer_name' => $this->customer_name,
-            'customer_phone' => $this->customer_phone,
-            'service_id' => $this->service_id,
-            'barber_user_id' => $this->barber_user_id ?: null,
-            'reservation_date' => $this->reservation_date,
-            'start_time' => date('H:i:s', $startTimestamp),
-            'end_time' => $endTime,
-            'status' => 'pending',
-            'notes' => $this->notes,
-        ]);
+        try {
+            DB::transaction(function () use ($slotService, $startTimeFormatted, $endTimeFormatted, $barberId) {
+                // ATOMIC LOCK & CONFLICT CHECK
+                $hasConflict = $slotService->hasConflict(
+                    $this->tenant->id,
+                    $this->reservation_date,
+                    $startTimeFormatted,
+                    $endTimeFormatted,
+                    $barberId
+                );
 
-        $this->booking_success = true;
-        $this->created_reservation_code = $code;
+                if ($hasConflict) {
+                    throw new \Exception('Maaf, slot waktu jam '.$this->start_time.' WIB baru saja dipesan oleh pelanggan lain. Silakan pilih slot waktu atau barber lain.');
+                }
 
-        $this->reset(['customer_name', 'customer_phone', 'service_id', 'barber_user_id', 'notes']);
+                $code = 'RSV-'.strtoupper(Str::random(6));
+
+                Reservation::create([
+                    'tenant_id' => $this->tenant->id,
+                    'reservation_code' => $code,
+                    'customer_name' => $this->customer_name,
+                    'customer_phone' => $this->customer_phone,
+                    'service_id' => $this->service_id,
+                    'barber_user_id' => $barberId,
+                    'reservation_date' => $this->reservation_date,
+                    'start_time' => $startTimeFormatted,
+                    'end_time' => $endTimeFormatted,
+                    'status' => 'pending',
+                    'notes' => $this->notes,
+                ]);
+
+                $this->created_reservation_code = $code;
+            });
+
+            $this->booking_success = true;
+            $this->loadSlots();
+            $this->reset(['customer_name', 'customer_phone', 'notes']);
+
+        } catch (\Exception $e) {
+            $this->addError('start_time', $e->getMessage());
+            $this->loadSlots();
+        }
     }
 
     public function render()

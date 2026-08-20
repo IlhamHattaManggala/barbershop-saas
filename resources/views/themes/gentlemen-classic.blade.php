@@ -139,15 +139,33 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-                                        <div>
-                                            <label class="block font-semibold text-slate-700 mb-1.5">Tanggal Reservasi</label>
-                                            <input type="date" wire:model="reservation_date" required class="w-full bg-slate-50 border border-slate-200 {{ $btnRadius }} px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none" />
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1.5">Tanggal Reservasi</label>
+                                        <input type="date" wire:model.live="reservation_date" required class="w-full bg-slate-50 border border-slate-200 {{ $btnRadius }} px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none" />
+                                    </div>
+                                    <div class="col-span-full space-y-1.5">
+                                        <label class="block font-semibold text-slate-700">Pilih Slot Jam Cukur (Live Available Slots)</label>
+                                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 border border-slate-100 rounded-xl bg-slate-50/50">
+                                            @forelse($available_slots as $slot)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="selectSlot('{{ $slot['time'] }}')" 
+                                                    disabled="{{ !$slot['available'] }}"
+                                                    class="py-2 px-1.5 rounded-lg text-xs font-bold transition-all border flex flex-col items-center justify-center cursor-pointer disabled:cursor-not-allowed {{ $start_time === $slot['time'] ? 'bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-slate-900/20' : ($slot['available'] ? 'bg-white border-slate-200 text-slate-800 hover:border-slate-900 hover:bg-slate-50' : 'bg-slate-100 border-slate-200/60 text-slate-400 line-through opacity-60') }}"
+                                                    title="{{ $slot['reason'] }}"
+                                                >
+                                                    <span>{{ $slot['time'] }}</span>
+                                                    <span class="text-[9px] font-normal {{ $start_time === $slot['time'] ? 'text-slate-300' : ($slot['available'] ? 'text-slate-500' : 'text-slate-400') }}">{{ $slot['available'] ? 'Tersedia' : $slot['reason'] }}</span>
+                                                </button>
+                                            @empty
+                                                <div class="col-span-full text-center text-xs text-slate-400 py-3">
+                                                    Tidak ada slot waktu tersedia di tanggal ini.
+                                                </div>
+                                            @endforelse
                                         </div>
-                                        <div>
-                                            <label class="block font-semibold text-slate-700 mb-1.5">Jam Mulai</label>
-                                            <input type="time" wire:model="start_time" required class="w-full bg-slate-50 border border-slate-200 {{ $btnRadius }} px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none" />
-                                        </div>
+                                        @error('start_time')
+                                            <span class="text-[11px] font-semibold text-red-600 mt-1 block">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                     <div>
                                         <label class="block font-semibold text-slate-700 mb-1.5">Catatan Request Model Rambut</label>
