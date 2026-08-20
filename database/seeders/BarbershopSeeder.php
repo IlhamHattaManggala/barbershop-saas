@@ -18,11 +18,13 @@ class BarbershopSeeder extends Seeder
 {
     public function run(): void
     {
+        $defaultPassword = Hash::make(env('SEEDER_DEFAULT_PASSWORD', 'password'));
+
         // 1. SuperAdmin User
         $superadmin = User::create([
             'name' => 'Super Admin BarberSaaS',
             'email' => 'superadmin@babershop.my.id',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'superadmin',
             'phone' => '081200000000',
         ]);
@@ -54,7 +56,7 @@ class BarbershopSeeder extends Seeder
             'tenant_id' => $tenant1->id,
             'name' => 'Budi Santoso',
             'email' => 'budi@babershop.my.id',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'owner',
             'phone' => '081234567890',
         ]);
@@ -65,7 +67,7 @@ class BarbershopSeeder extends Seeder
             'tenant_id' => $tenant1->id,
             'name' => 'Rina Kasir',
             'email' => 'kasir@babershop.my.id',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'cashier',
             'phone' => '081211112222',
         ]);
@@ -75,7 +77,7 @@ class BarbershopSeeder extends Seeder
             'tenant_id' => $tenant1->id,
             'name' => 'Agus Barber',
             'email' => 'agus@babershop.my.id',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'barber',
             'phone' => '081233334444',
         ]);
@@ -84,7 +86,7 @@ class BarbershopSeeder extends Seeder
             'tenant_id' => $tenant1->id,
             'name' => 'Joko Mastercut',
             'email' => 'joko@babershop.my.id',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'barber',
             'phone' => '081255556666',
         ]);
@@ -93,7 +95,7 @@ class BarbershopSeeder extends Seeder
         $customer1 = User::create([
             'name' => 'Andi Pelanggan',
             'email' => 'andi@gmail.com',
-            'password' => Hash::make('password'),
+            'password' => $defaultPassword,
             'role' => 'customer',
             'phone' => '081277778888',
         ]);
