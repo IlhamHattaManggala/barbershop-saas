@@ -375,12 +375,34 @@
                     </div>
                 @endif
 
+                <!-- Validation Error Display -->
+                @if($errors->any())
+                    <div class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs space-y-1">
+                        @foreach($errors->all() as $error)
+                            <div class="flex items-center gap-1.5 font-bold">
+                                <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>{{ $error }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="flex justify-between text-base font-black text-indigo-700 pt-1.5 border-t border-slate-200">
                     <span>TOTAL BAYAR</span>
                     <span class="font-mono">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
                 </div>
 
-                <button wire:click="checkout" {{ empty($cart) ? 'disabled' : '' }} class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs rounded-xl shadow-md transition uppercase tracking-wider">
+                @php
+                    $isInvalidCash = ($payment_method === 'cash' && (float) $cash_paid < $totalAmount);
+                    $isInvalidProof = (in_array($payment_method, ['qris', 'transfer']) && empty($base64_payment_proof) && empty($payment_proof_photo));
+                    $isCheckoutDisabled = empty($cart) || $isInvalidCash || $isInvalidProof;
+                @endphp
+
+                <button 
+                    wire:click="checkout" 
+                    {{ $isCheckoutDisabled ? 'disabled' : '' }} 
+                    class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-extrabold text-xs rounded-xl shadow-md transition uppercase tracking-wider cursor-pointer"
+                >
                     Bayar & Selesaikan Transaksi
                 </button>
             </div>

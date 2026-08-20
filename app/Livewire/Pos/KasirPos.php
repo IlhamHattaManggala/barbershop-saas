@@ -174,15 +174,41 @@ class KasirPos extends Component
 
     public function checkout()
     {
+        $this->resetErrorBag();
+
         if (empty($this->cart)) {
+            $this->addError('cart', 'Keranjang belanja masih kosong.');
+
             return;
         }
 
         $tenantId = auth()->user()->tenant_id ?? 1;
         $subtotal = array_sum(array_column($this->cart, 'subtotal'));
         $totalAmount = max(0, $subtotal - $this->discount + $this->tax);
-        $cashPaid = $this->payment_method === 'cash' ? max($totalAmount, (float) $this->cash_paid) : $totalAmount;
-        $changeDue = $cashPaid - $totalAmount;
+
+        // 1. Strict Validation: Cash Payment must be greater than or equal to total amount
+        if ($this->payment_method === 'cash') {
+            $cashInput = (float) $this->cash_paid;
+            if ($cashInput < $totalAmount) {
+                $this->addError('cash_paid', 'Uang tunai yang diterima (Rp '.number_format($cashInput, 0, ',', '.').') kurang dari total tagihan (Rp '.number_format($totalAmount, 0, ',', '.').').');
+
+                return;
+            }
+            $cashPaid = $cashInput;
+        } else {
+            $cashPaid = $totalAmount;
+        }
+
+        // 2. Strict Validation: QRIS & Transfer must have a Payment Proof photo (Camera or Upload)
+        if (in_array($this->payment_method, ['qris', 'transfer'])) {
+            if (empty($this->base64_payment_proof) && empty($this->payment_proof_photo)) {
+                $this->addError('payment_proof', 'Bukti pembayaran (Foto Kamera/Upload File) wajib disertakan untuk metode '.strtoupper($this->payment_method).'.');
+
+                return;
+            }
+        }
+
+        $changeDue = max(0, $cashPaid - $totalAmount);
 
         $proofPath = null;
         if ($this->base64_payment_proof) {
