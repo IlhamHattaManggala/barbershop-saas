@@ -150,15 +150,34 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-[11px] text-cyan-300 font-bold uppercase tracking-wider mb-1.5">Tanggal</label>
-                                            <input type="date" wire:model="reservation_date" required class="w-full bg-purple-950 border border-fuchsia-500/40 rounded-xl px-4 py-3 text-xs text-fuchsia-100 focus:border-cyan-400 focus:outline-none transition" />
+                                    <div>
+                                        <label class="block text-[11px] text-cyan-300 font-bold uppercase tracking-wider mb-1.5">Tanggal Reservasi</label>
+                                        <input type="date" wire:model.live="reservation_date" required class="w-full bg-purple-950 border border-fuchsia-500/40 rounded-xl px-4 py-3 text-xs text-fuchsia-100 focus:border-cyan-400 focus:outline-none transition font-mono" />
+                                    </div>
+
+                                    <div class="space-y-1.5 font-mono">
+                                        <label class="block text-[11px] text-cyan-300 font-bold uppercase tracking-wider">Slot Jam Cukur (Live Available Slots)</label>
+                                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 border border-fuchsia-500/40 rounded-xl bg-purple-950">
+                                            @forelse($available_slots as $slot)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="selectSlot('{{ $slot['time'] }}')" 
+                                                    disabled="{{ !$slot['available'] }}"
+                                                    class="py-2.5 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center cursor-pointer disabled:cursor-not-allowed {{ $start_time === $slot['time'] ? 'bg-cyan-400 text-purple-950 border-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.6)]' : ($slot['available'] ? 'bg-purple-900 border-fuchsia-500/40 text-fuchsia-200 hover:border-cyan-400' : 'bg-purple-950 border-purple-900 text-purple-600 line-through opacity-50') }}"
+                                                    title="{{ $slot['reason'] }}"
+                                                >
+                                                    <span>{{ $slot['time'] }}</span>
+                                                    <span class="text-[9px] font-normal {{ $start_time === $slot['time'] ? 'text-purple-900' : ($slot['available'] ? 'text-cyan-300' : 'text-purple-600') }}">{{ $slot['available'] ? 'Tersedia' : $slot['reason'] }}</span>
+                                                </button>
+                                            @empty
+                                                <div class="col-span-full text-center text-xs text-purple-500 py-3">
+                                                    Tidak ada slot waktu tersedia.
+                                                </div>
+                                            @endforelse
                                         </div>
-                                        <div>
-                                            <label class="block text-[11px] text-cyan-300 font-bold uppercase tracking-wider mb-1.5">Jam Mulai</label>
-                                            <input type="time" wire:model="start_time" required class="w-full bg-purple-950 border border-fuchsia-500/40 rounded-xl px-4 py-3 text-xs text-fuchsia-100 focus:border-cyan-400 focus:outline-none transition" />
-                                        </div>
+                                        @error('start_time')
+                                            <span class="text-[11px] font-semibold text-fuchsia-400 mt-1 block">{{ $message }}</span>
+                                        @enderror
                                     </div>
 
                                     <div>
