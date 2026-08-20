@@ -70,5 +70,8 @@ require __DIR__.'/settings.php';
 // PUBLIC STANDALONE THEME PREVIEW PORTAL (/themes/preview/{themeSlug})
 Route::get('themes/preview/{themeSlug}', ThemePreviewPage::class)->name('theme.preview');
 
+// PUBLIC TENANT BOOKING SUCCESS LANDING PAGE
+Route::get('{slug}/booking/success/{reservationCode}', BookingSuccessPage::class)->name('tenant.booking.success');
+
 // PUBLIC TENANT RESERVATION PORTAL (/{slug} e.g. /gentlemen-barber)
 Route::get('{slug}', ShopBookingPage::class)->name('tenant.public');

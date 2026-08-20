@@ -194,9 +194,13 @@ class ShopBookingPage extends Component
                 $this->created_reservation_code = $code;
             });
 
-            $this->booking_success = true;
             $this->loadSlots();
             $this->reset(['customer_name', 'customer_phone', 'notes']);
+
+            return redirect()->route('tenant.booking.success', [
+                'slug' => $this->tenant->slug,
+                'reservationCode' => $this->created_reservation_code,
+            ]);
 
         } catch (\Exception $e) {
             $this->addError('start_time', $e->getMessage());
