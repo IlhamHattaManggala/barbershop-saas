@@ -50,12 +50,16 @@
 
             <div>
                 <flux:label>Filter Barber Specialist</flux:label>
-                <flux:select wire:model.live="barber_filter" class="mt-1">
-                    <option value="all">Semua Barber</option>
-                    @foreach($barbers as $b)
-                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                    @endforeach
-                </flux:select>
+                @if(auth()->check() && auth()->user()->role === 'barber')
+                    <flux:input value="Tugas Saya ({{ auth()->user()->name }})" disabled class="mt-1 font-bold" />
+                @else
+                    <flux:select wire:model.live="barber_filter" class="mt-1">
+                        <option value="all">Semua Barber</option>
+                        @foreach($barbers as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        @endforeach
+                    </flux:select>
+                @endif
             </div>
         </div>
     </flux:card>

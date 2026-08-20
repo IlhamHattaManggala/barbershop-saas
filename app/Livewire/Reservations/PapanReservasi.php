@@ -39,6 +39,12 @@ class PapanReservasi extends Component
     public function mount()
     {
         $this->reservation_date = date('Y-m-d');
+
+        // ROLE SCOPING: If logged in as Barber, scope view & default barber choice to own User ID
+        if (auth()->check() && auth()->user()->role === 'barber') {
+            $this->barber_filter = auth()->id();
+            $this->barber_user_id = auth()->id();
+        }
     }
 
     public function openReassignModal($reservationId)
@@ -100,6 +106,7 @@ class PapanReservasi extends Component
         $endTime = date('H:i:s', strtotime($this->start_time." + {$duration} minutes"));
 
         $tenantId = auth()->user()->tenant_id ?? 1;
+        $assignedBarber = $this->barber_user_id ?: (auth()->user()->role === 'barber' ? auth()->id() : null);
 
         Reservation::create([
             'tenant_id' => $tenantId,
@@ -108,7 +115,7 @@ class PapanReservasi extends Component
             'customer_phone' => $this->customer_phone,
             'customer_user_id' => auth()->id(),
             'service_id' => $this->service_id,
-            'barber_user_id' => $this->barber_user_id,
+            'barber_user_id' => $assignedBarber,
             'reservation_date' => $this->reservation_date,
             'start_time' => $this->start_time,
             'end_time' => $endTime,
@@ -135,7 +142,13 @@ class PapanReservasi extends Component
             $query->where('status', $this->status_filter);
         }
 
-        if ($this->barber_filter !== 'all') {
+        // ROLE SCOPING: If logged in as Barber, only show reservations assigned to him OR unassigned (barber_user_id is null)
+        if (auth()->check() && auth()->user()->role === 'barber') {
+            $query->where(function ($q) {
+                $q->where('barber_user_id', auth()->id())
+                    ->orWhereNull('barber_user_id');
+            });
+        } elseif ($this->barber_filter !== 'all') {
             $query->where('barber_user_id', $this->barber_filter);
         }
 
