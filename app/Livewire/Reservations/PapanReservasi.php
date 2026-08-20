@@ -26,9 +26,63 @@ class PapanReservasi extends Component
 
     public $success_message = '';
 
+    public $status_filter = 'all';
+
+    public $barber_filter = 'all';
+
+    public $show_reassign_modal = false;
+
+    public $reassign_reservation_id = null;
+
+    public $reassign_barber_id = null;
+
     public function mount()
     {
         $this->reservation_date = date('Y-m-d');
+    }
+
+    public function openReassignModal($reservationId)
+    {
+        $reservation = Reservation::find($reservationId);
+        if ($reservation) {
+            $this->reassign_reservation_id = $reservation->id;
+            $this->reassign_barber_id = $reservation->barber_user_id;
+            $this->show_reassign_modal = true;
+        }
+    }
+
+    public function closeReassignModal()
+    {
+        $this->show_reassign_modal = false;
+        $this->reassign_reservation_id = null;
+        $this->reassign_barber_id = null;
+    }
+
+    public function saveReassignBarber()
+    {
+        if ($this->reassign_reservation_id && $this->reassign_barber_id) {
+            $reservation = Reservation::find($this->reassign_reservation_id);
+            if ($reservation) {
+                $newBarber = User::find($this->reassign_barber_id);
+                $reservation->update(['barber_user_id' => $this->reassign_barber_id]);
+                $this->success_message = 'Reservasi '.($reservation->reservation_code ?? 'Tamu').' Berhasil Dialihkan ke Barber '.($newBarber->name ?? 'Baru').'!';
+            }
+        }
+        $this->closeReassignModal();
+    }
+
+    public function updateStatus($reservationId, $newStatus)
+    {
+        $reservation = Reservation::find($reservationId);
+        if ($reservation) {
+            $reservation->update(['status' => $newStatus]);
+            $this->success_message = 'Status Reservasi '.$reservation->reservation_code.' Diperbarui!';
+        }
+    }
+
+    public function sendToPosCheckout($reservationId)
+    {
+        return redirect()->to('/pos?reservation_id='.$reservationId);
     }
 
     public function createReservation()
@@ -66,22 +120,26 @@ class PapanReservasi extends Component
         $this->reset(['customer_name', 'customer_phone', 'notes']);
     }
 
-    public function updateStatus($reservationId, $newStatus)
-    {
-        $reservation = Reservation::find($reservationId);
-        if ($reservation) {
-            $reservation->update(['status' => $newStatus]);
-        }
-    }
-
     public function render()
     {
         $tenantId = auth()->user()->tenant_id ?? 1;
 
-        $reservations = Reservation::where('tenant_id', $tenantId)
-            ->with(['service', 'barber'])
-            ->latest()
-            ->get();
+        $query = Reservation::where('tenant_id', $tenantId)
+            ->with(['service', 'barber']);
+
+        if ($this->reservation_date) {
+            $query->whereDate('reservation_date', $this->reservation_date);
+        }
+
+        if ($this->status_filter !== 'all') {
+            $query->where('status', $this->status_filter);
+        }
+
+        if ($this->barber_filter !== 'all') {
+            $query->where('barber_user_id', $this->barber_filter);
+        }
+
+        $reservations = $query->orderBy('start_time', 'asc')->get();
 
         $services = Service::where('tenant_id', $tenantId)->where('is_active', true)->get();
         $barbers = User::where('tenant_id', $tenantId)->whereIn('role', ['barber', 'owner'])->get();

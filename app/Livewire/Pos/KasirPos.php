@@ -3,6 +3,7 @@
 namespace App\Livewire\Pos;
 
 use App\Models\Product;
+use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
@@ -24,6 +25,8 @@ class KasirPos extends Component
 
     public $selected_barber_id = null;
 
+    public $reservation_id = null;
+
     public $payment_method = 'cash';
 
     public $cash_paid = 0;
@@ -43,6 +46,28 @@ class KasirPos extends Component
     public $success_message = '';
 
     public $last_transaction = null;
+
+    public function mount()
+    {
+        if (request()->has('reservation_id')) {
+            $reservationId = request()->get('reservation_id');
+            $reservation = Reservation::find($reservationId);
+            if ($reservation) {
+                $this->reservation_id = $reservation->id;
+                $this->customer_name = $reservation->customer_name ?: 'Pelanggan Umum';
+                $this->customer_phone = $reservation->customer_phone ?: '';
+                $this->selected_barber_id = $reservation->barber_user_id;
+
+                if ($reservation->service_id) {
+                    $this->addServiceToCart($reservation->service_id);
+                }
+
+                if (in_array($reservation->status, ['pending', 'confirmed'])) {
+                    $reservation->update(['status' => 'in_service']);
+                }
+            }
+        }
+    }
 
     public function saveBase64PaymentProof($base64Data)
     {
@@ -207,6 +232,14 @@ class KasirPos extends Component
                 if ($product) {
                     $product->decrement('stock', $item['qty']);
                 }
+            }
+        }
+
+        // If this transaction was generated from an Online Reservation, mark reservation as completed
+        if ($this->reservation_id) {
+            $reservation = Reservation::find($this->reservation_id);
+            if ($reservation) {
+                $reservation->update(['status' => 'completed']);
             }
         }
 
