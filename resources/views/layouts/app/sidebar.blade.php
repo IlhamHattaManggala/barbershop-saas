@@ -95,6 +95,10 @@
                             <flux:sidebar.item icon="printer" :href="route('owner.receipt.edit')" :current="request()->routeIs('owner.receipt.*')" wire:navigate>
                                 {{ __('Struk Kasir POS') }}
                             </flux:sidebar.item>
+
+                            <flux:sidebar.item icon="chat-bubble-left-right" :href="route('owner.whatsapp.index')" :current="request()->routeIs('owner.whatsapp.*')" wire:navigate>
+                                {{ __('WhatsApp Gateway') }}
+                            </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endif
                 @endif

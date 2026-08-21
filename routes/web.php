@@ -16,6 +16,7 @@ use App\Livewire\Reports\ReportsManager;
 use App\Livewire\Reservations\PapanReservasi;
 use App\Livewire\Services\ServicesManager;
 use App\Livewire\Staff\StaffManager;
+use App\Livewire\WhatsApp\WhatsAppManager;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'verified', 'owner'])->prefix('owner')->group(functio
     Route::get('products', ProductsManager::class)->name('products');
     Route::get('services', ServicesManager::class)->name('services');
     Route::get('staff', StaffManager::class)->name('staff');
+    Route::get('whatsapp', WhatsAppManager::class)->name('owner.whatsapp.index');
 });
 
 // SUPERADMIN PROTECTED GROUP (/superadmin/)

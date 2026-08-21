@@ -3,7 +3,6 @@
 namespace App\Livewire\Settings;
 
 use App\Models\Tenant;
-use App\Services\WhatsAppService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -33,22 +32,6 @@ class ShopSettings extends Component
 
     public $cashier_commission_percentage = 5;
 
-    public $wa_enabled = false;
-
-    public $wa_gateway_url = 'http://localhost:3000/send-message';
-
-    public $wa_api_key = '';
-
-    public $test_wa_phone = '';
-
-    public $wa_test_result = '';
-
-    public $wa_qr_code = null;
-
-    public $wa_connection_status = 'offline';
-
-    public $wa_status_message = '';
-
     public $slug = '';
 
     public $success_message = '';
@@ -67,15 +50,6 @@ class ShopSettings extends Component
             $this->barber_commission_percentage = $tenant->barber_commission_percentage ?? 40;
             $this->cashier_commission_percentage = $tenant->cashier_commission_percentage ?? 5;
             $this->slug = $tenant->slug;
-
-            $waSettings = $tenant->wa_settings ?? [];
-            $this->wa_enabled = isset($waSettings['enabled']) ? (bool) $waSettings['enabled'] : false;
-            $this->wa_gateway_url = $waSettings['gateway_url'] ?? 'http://localhost:3000/send-message';
-            $this->wa_api_key = $waSettings['api_key'] ?? '';
-            $this->test_wa_phone = $this->phone;
-
-            // Auto check Baileys status & QR code on page mount
-            $this->checkBaileysQrStatus();
         } else {
             $this->name = 'Gentlemen Barber Studio';
             $this->slug = 'gentlemen-barber';
@@ -92,8 +66,6 @@ class ShopSettings extends Component
             'bank_info' => 'nullable|string|max:500',
             'barber_commission_percentage' => 'required|numeric|min:0|max:100',
             'cashier_commission_percentage' => 'required|numeric|min:0|max:100',
-            'wa_gateway_url' => 'nullable|string|max:255',
-            'wa_api_key' => 'nullable|string|max:255',
             'new_logo' => 'nullable|image|max:2048',
             'new_qris_image' => 'nullable|image|max:3072',
         ]);
@@ -109,11 +81,6 @@ class ShopSettings extends Component
                 'bank_info' => $this->bank_info,
                 'barber_commission_percentage' => $this->barber_commission_percentage,
                 'cashier_commission_percentage' => $this->cashier_commission_percentage,
-                'wa_settings' => [
-                    'enabled' => (bool) $this->wa_enabled,
-                    'gateway_url' => $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
-                    'api_key' => $this->wa_api_key ?: '',
-                ],
             ];
 
             if ($this->new_logo) {
@@ -131,58 +98,8 @@ class ShopSettings extends Component
             }
 
             $tenant->update($data);
-            $this->success_message = 'Pengaturan Toko & WhatsApp Gateway Berhasil Disimpan!';
+            $this->success_message = 'Pengaturan Outlet Barbershop & Barcode QRIS Berhasil Disimpan!';
         }
-    }
-
-    public function testWhatsAppConnection()
-    {
-        if (empty($this->test_wa_phone)) {
-            $this->wa_test_result = 'Harap isi Nomor WhatsApp tujuan tes terlebih dahulu.';
-
-            return;
-        }
-
-        $waService = new WhatsAppService;
-        $testMsg = "*TES KONEKSI WHATSAPP GATEWAY*\n\nPesan tes pengujian sistem Notifikasi WhatsApp Barbershop SaaS berhasil diterima di nomor Anda.";
-
-        $settings = [
-            'gateway_url' => $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
-            'api_key' => $this->wa_api_key ?: '',
-        ];
-
-        $success = $waService->sendCustomMessage($this->test_wa_phone, $testMsg, $settings);
-
-        if ($success) {
-            $this->wa_test_result = 'Pesan tes WhatsApp BERHASIL dikirim ke '.$this->test_wa_phone.'!';
-        } else {
-            $this->wa_test_result = 'Gagal terhubung ke Server WA Gateway ('.$this->wa_gateway_url.'). Pastikan service Baileys/Gateway sedang aktif.';
-        }
-    }
-
-    public function checkBaileysQrStatus()
-    {
-        $waService = new WhatsAppService;
-        $res = $waService->fetchBaileysStatusAndQr(
-            $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
-            $this->wa_api_key ?: ''
-        );
-
-        $this->wa_connection_status = $res['status'] ?? 'offline';
-        $this->wa_qr_code = $res['qr'] ?? null;
-        $this->wa_status_message = $res['message'] ?? '';
-
-        // If offline on local port, generate instant live QR demo so user can see live QR preview
-        if ($this->wa_connection_status === 'offline' && empty($this->wa_qr_code)) {
-            $this->generateDemoQrCode();
-        }
-    }
-
-    public function generateDemoQrCode()
-    {
-        $this->wa_connection_status = 'qr_ready';
-        $this->wa_qr_code = '2@BaileysWABarberSaaSAutoPairingToken_'.time().'_'.rand(1000, 9999);
-        $this->wa_status_message = 'Barcode QR Sesi Baileys Berhasil Dimuat! Silakan scan menggunakan aplikasi WhatsApp di HP Anda.';
     }
 
     public function removeQrisImage()
