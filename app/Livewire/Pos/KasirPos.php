@@ -43,9 +43,16 @@ class KasirPos extends Component
 
     public $catalog_filter = 'all'; // 'all', 'services', 'products'
 
+    public $showReceiptModal = false;
+
     public $success_message = '';
 
     public $last_transaction = null;
+
+    public function closeReceiptModal()
+    {
+        $this->showReceiptModal = false;
+    }
 
     public function mount()
     {
@@ -269,7 +276,8 @@ class KasirPos extends Component
             }
         }
 
-        $this->last_transaction = $transaction;
+        $this->last_transaction = $transaction->load(['items.barber', 'cashier', 'tenant']);
+        $this->showReceiptModal = true;
         $this->success_message = 'Transaksi '.$transaction->transaction_number.' Berhasil Dibuat!';
         $this->clearCart();
     }

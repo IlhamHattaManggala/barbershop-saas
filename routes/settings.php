@@ -2,6 +2,7 @@
 
 use App\Livewire\Settings\BrandingSettings;
 use App\Livewire\Settings\GatewaySettings;
+use App\Livewire\Settings\ReceiptSettings;
 use App\Livewire\Settings\ShopSettings;
 use App\Livewire\Settings\ThemeCustomizer;
 use App\Livewire\Settings\ThemeSettings;
@@ -37,6 +38,7 @@ Route::middleware(['auth', 'verified', 'owner'])->prefix('owner')->group(functio
     Route::livewire('settings/profile', 'pages::settings.profile')->name('owner.profile.edit');
     Route::livewire('settings/appearance', 'pages::settings.appearance')->name('owner.appearance.edit');
     Route::get('settings/shop', ShopSettings::class)->name('owner.shop.edit');
+    Route::get('settings/receipt', ReceiptSettings::class)->name('owner.receipt.edit');
     Route::get('settings/theme', ThemeSettings::class)->name('owner.theme.edit');
     Route::get('settings/theme/customize', ThemeCustomizer::class)->name('owner.theme.customize');
     Route::livewire('settings/security', 'pages::settings.security')

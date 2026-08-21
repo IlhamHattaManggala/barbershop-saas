@@ -91,6 +91,10 @@
                             <flux:sidebar.item icon="swatch" :href="route('owner.theme.edit')" :current="request()->routeIs('owner.theme.*')" wire:navigate>
                                 {{ __('Tema Web Portal') }}
                             </flux:sidebar.item>
+
+                            <flux:sidebar.item icon="printer" :href="route('owner.receipt.edit')" :current="request()->routeIs('owner.receipt.*')" wire:navigate>
+                                {{ __('Struk Kasir POS') }}
+                            </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endif
                 @endif

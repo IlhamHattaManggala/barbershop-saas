@@ -8,6 +8,8 @@ use App\Livewire\Cashier\CashierDashboard;
 use App\Livewire\Feedback\UserFeedbackForm;
 use App\Livewire\Inventory\ProductsManager;
 use App\Livewire\Pos\KasirPos;
+use App\Livewire\Public\PaymentFailedPage;
+use App\Livewire\Public\PaymentSuccessPage;
 use App\Livewire\Public\ShopBookingPage;
 use App\Livewire\Public\ThemePreviewPage;
 use App\Livewire\Reports\ReportsManager;

@@ -411,4 +411,170 @@
 
     </div>
 
+    <!-- MODAL CETAK STRUK POS THERMAL -->
+    @if($showReceiptModal && $last_transaction)
+        @php
+            $receiptTenant = $last_transaction->tenant ?? auth()->user()->tenant;
+            $rSettings = $receiptTenant->receipt_settings ?? [];
+            $paperSize = $rSettings['paper_size'] ?? '58mm';
+            $showLogo = isset($rSettings['show_logo']) ? (bool) $rSettings['show_logo'] : true;
+            $showBarber = isset($rSettings['show_barber']) ? (bool) $rSettings['show_barber'] : true;
+            $headerText = $rSettings['header_text'] ?? '';
+            $footerText = $rSettings['footer_text'] ?? 'Terima kasih atas kunjungan Anda. Harap simpan struk ini sebagai bukti pembayaran resmi.';
+        @endphp
+
+        <style>
+            @media print {
+                body * { visibility: hidden !important; }
+                .thermal-print-area, .thermal-print-area * { visibility: visible !important; }
+                .thermal-print-area {
+                    position: absolute !important;
+                    left: 0 !important;
+                    top: 0 !important;
+                    width: {{ $paperSize === '80mm' ? '78mm' : '56mm' }} !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                @page {
+                    size: {{ $paperSize === '80mm' ? '80mm auto' : '58mm auto' }};
+                    margin: 0mm;
+                }
+            }
+        </style>
+
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs no-print">
+            <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full overflow-hidden flex flex-col max-h-[90vh]">
+                
+                <!-- Modal Header -->
+                <div class="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs text-zinc-900 dark:text-white leading-tight">Transaksi Lunas!</h3>
+                            <p class="text-[10px] text-zinc-400 font-mono">{{ $last_transaction->transaction_number }}</p>
+                        </div>
+                    </div>
+                    
+                    <button type="button" wire:click="closeReceiptModal" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Printable Receipt Preview Container -->
+                <div class="p-4 overflow-y-auto flex-1 bg-amber-50/40 dark:bg-zinc-950/60 flex justify-center">
+                    
+                    <!-- Paper Mockup Area -->
+                    <div class="thermal-print-area bg-white text-zinc-900 font-mono text-[11px] leading-tight p-3 border border-zinc-200 rounded-sm shadow-sm space-y-2.5"
+                         style="width: {{ $paperSize === '80mm' ? '270px' : '210px' }};">
+                        
+                        <div class="text-center space-y-0.5">
+                            @if($showLogo && $receiptTenant && $receiptTenant->logo)
+                                <img src="{{ asset($receiptTenant->logo) }}" alt="Logo" class="w-7 h-7 object-contain mx-auto mb-1" />
+                            @endif
+                            <div class="font-extrabold text-xs uppercase tracking-tight">{{ $receiptTenant->name ?? 'BARBERSHOP' }}</div>
+                            @if(!empty($receiptTenant->address))
+                                <div class="text-[9px] text-zinc-600">{{ $receiptTenant->address }}</div>
+                            @endif
+                            @if(!empty($headerText))
+                                <div class="text-[9px] text-zinc-600 italic">{{ $headerText }}</div>
+                            @endif
+                        </div>
+
+                        <div class="border-b border-dashed border-zinc-400"></div>
+
+                        <div class="space-y-0.5 text-[9px]">
+                            <div class="flex justify-between">
+                                <span>Nota: {{ $last_transaction->transaction_number }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Waktu: {{ $last_transaction->created_at->format('d/m/Y H:i') }} WIB</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Kasir: {{ $last_transaction->cashier?->name ?? 'Kasir' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Pelanggan: {{ $last_transaction->customer_name ?? 'Umum' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-dashed border-zinc-400"></div>
+
+                        <!-- Items -->
+                        <div class="space-y-1.5 text-[9px]">
+                            @foreach($last_transaction->items as $item)
+                                <div>
+                                    <div class="font-bold">{{ $item->item_name }}</div>
+                                    @if($showBarber && $item->barber)
+                                        <div class="text-[8px] text-zinc-500">(Barber: {{ $item->barber->name }})</div>
+                                    @endif
+                                    <div class="flex justify-between">
+                                        <span>{{ $item->quantity }} x {{ number_format($item->price, 0, ',', '.') }}</span>
+                                        <span class="font-bold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="border-b border-dashed border-zinc-400"></div>
+
+                        <!-- Totals -->
+                        <div class="space-y-0.5 text-[9px]">
+                            <div class="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span>Rp {{ number_format($last_transaction->subtotal, 0, ',', '.') }}</span>
+                            </div>
+                            @if($last_transaction->discount > 0)
+                                <div class="flex justify-between text-rose-600">
+                                    <span>Diskon:</span>
+                                    <span>-Rp {{ number_format($last_transaction->discount, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
+                            <div class="flex justify-between font-bold text-[10px] pt-1 border-t border-zinc-300">
+                                <span>TOTAL:</span>
+                                <span>Rp {{ number_format($last_transaction->total_amount, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between text-[9px] pt-0.5">
+                                <span>BAYAR ({{ strtoupper($last_transaction->payment_method) }}):</span>
+                                <span>Rp {{ number_format($last_transaction->cash_paid, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between text-[9px]">
+                                <span>Kembalian:</span>
+                                <span>Rp {{ number_format($last_transaction->change_due, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-dashed border-zinc-400"></div>
+
+                        <div class="text-center text-[8px] text-zinc-600 leading-tight">
+                            {{ $footerText }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Modal Action Buttons -->
+                <div class="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex gap-2">
+                    <button 
+                        type="button" 
+                        onclick="window.print()" 
+                        class="flex-1 py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        <span>Cetak Struk Thermal</span>
+                    </button>
+
+                    <button 
+                        type="button" 
+                        wire:click="closeReceiptModal" 
+                        class="px-4 py-2.5 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endif
 </div>

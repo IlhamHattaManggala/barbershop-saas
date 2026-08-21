@@ -17,6 +17,7 @@
                 <flux:navlist.item :href="route('branding.edit')" :current="request()->routeIs('branding.edit')" wire:navigate>{{ __('Identitas Website') }}</flux:navlist.item>
             @elseif(!$isCashier && !$isBarber)
                 <flux:navlist.item :href="route('owner.shop.edit')" :current="request()->routeIs('owner.shop.edit')" wire:navigate>{{ __('Profil Barbershop') }}</flux:navlist.item>
+                <flux:navlist.item :href="route('owner.receipt.edit')" :current="request()->routeIs('owner.receipt.edit')" wire:navigate>{{ __('Struk POS Thermal') }}</flux:navlist.item>
             @endif
         </flux:navlist>
     </div>

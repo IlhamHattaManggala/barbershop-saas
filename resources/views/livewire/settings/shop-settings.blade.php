@@ -108,9 +108,54 @@
                     </div>
 
                     <div>
-                        <flux:label>Informasi Rekening Bank / Catatan Pembayaran (Opsional)</flux:label>
-                        <flux:textarea wire:model="bank_info" rows="2" placeholder="BCA: 1234567890 a/n Gentlemen Barber Studio&#10;Mandiri: 9876543210 a/n Gentlemen Barber Studio" />
-                        <flux:description class="mt-0.5">Detail rekening bank ini akan membantu kasir dan pelanggan saat memilih metode Transfer Bank.</flux:description>
+                        <flux:label>Informasi Rekening Bank Outlet (Opsional)</flux:label>
+                        <flux:textarea wire:model="bank_info" rows="2" placeholder="BCA: 1234567890 a/n Gentlemen Studio&#10;Mandiri: 0987654321 a/n Budi Santoso" />
+                        <flux:description class="mt-1">Disertakan pada struk kasir & instruksi transfer manual.</flux:description>
+                    </div>
+                </div>
+
+                <!-- SECTION PENGATURAN STRUK KASIR POS THERMAL -->
+                <div class="pt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-4">
+                    <div>
+                        <flux:label class="font-bold text-zinc-900 dark:text-white">Pengaturan Struk Kasir POS (Printer Thermal)</flux:label>
+                        <flux:description class="mt-0.5">Atur format ukuran kertas, header, dan footer struk fisik thermal yang dicetak dari Mesin Kasir POS.</flux:description>
+
+                        <div class="mt-3 space-y-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <flux:label>Ukuran Kertas Printer Thermal</flux:label>
+                                    <flux:select wire:model="receipt_paper_size" class="mt-1">
+                                        <option value="58mm">58mm (Printer Kasir Mini Bluetooth/USB Default)</option>
+                                        <option value="80mm">80mm (Printer Kasir Desktop Standar)</option>
+                                    </flux:select>
+                                    <flux:description class="mt-1">Pilih ukuran lebar kertas thermal yang terpasang pada printer kasir outlet Anda.</flux:description>
+                                </div>
+
+                                <div class="space-y-2 pt-1">
+                                    <flux:label class="font-semibold text-xs">Opsi Tampilan Struk</flux:label>
+                                    <div class="space-y-2 text-xs">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" wire:model="receipt_show_logo" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" />
+                                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Tampilkan Logo Outlet di Bagian Atas Struk</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" wire:model="receipt_show_barber" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" />
+                                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Tampilkan Nama Barber Specialist per Item Pangkas</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <flux:label>Pesan Header Struk (Opsional)</flux:label>
+                                <flux:input wire:model="receipt_header_text" placeholder="Contoh: Premium Haircut & Gentlemen Grooming Studio" />
+                            </div>
+
+                            <div>
+                                <flux:label>Pesan Footer Struk (Penutup)</flux:label>
+                                <flux:textarea wire:model="receipt_footer_text" rows="2" placeholder="Terima kasih atas kunjungan Anda. Harap simpan struk ini sebagai bukti pembayaran resmi." />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

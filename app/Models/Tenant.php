@@ -40,12 +40,14 @@ class Tenant extends Model
         'barber_commission_percentage',
         'cashier_commission_percentage',
         'theme_config',
+        'receipt_settings',
     ];
 
     protected $casts = [
         'section_order' => 'array',
         'purchased_themes' => 'array',
         'theme_config' => 'array',
+        'receipt_settings' => 'array',
         'barber_commission_percentage' => 'decimal:2',
         'cashier_commission_percentage' => 'decimal:2',
     ];
