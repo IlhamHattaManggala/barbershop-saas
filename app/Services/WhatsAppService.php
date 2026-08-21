@@ -110,6 +110,76 @@ class WhatsAppService
     }
 
     /**
+     * Fetch live Baileys WhatsApp Web QR Code and Connection Status.
+     */
+    public function fetchBaileysStatusAndQr(string $gatewayUrl, string $apiKey = ''): array
+    {
+        try {
+            $parsedUrl = parse_url($gatewayUrl);
+            $scheme = $parsedUrl['scheme'] ?? 'http';
+            $host = $parsedUrl['host'] ?? 'localhost';
+            $port = isset($parsedUrl['port']) ? ':'.$parsedUrl['port'] : '';
+            $baseUrl = "{$scheme}://{$host}{$port}";
+
+            $headers = ['Content-Type' => 'application/json'];
+            if (! empty($apiKey)) {
+                $headers['Authorization'] = 'Bearer '.$apiKey;
+                $headers['x-api-key'] = $apiKey;
+            }
+
+            // Try endpoints: /qr, /status, /session/qr, or direct gatewayUrl
+            $endpoints = ["{$baseUrl}/qr", "{$baseUrl}/status", "{$baseUrl}/session/qr", $gatewayUrl];
+
+            foreach ($endpoints as $ep) {
+                try {
+                    $res = Http::withHeaders($headers)->timeout(3)->get($ep);
+                    if ($res->successful()) {
+                        $data = $res->json();
+
+                        $status = strtolower($data['status'] ?? $data['connection'] ?? '');
+                        if (in_array($status, ['connected', 'authenticated', 'open', 'ready']) || ! empty($data['user']) || ! empty($data['phone'])) {
+                            $user = $data['user'] ?? $data['phone'] ?? $data['pushName'] ?? 'Terkoneksi';
+
+                            return [
+                                'status' => 'connected',
+                                'user' => $user,
+                                'qr' => null,
+                                'message' => "WhatsApp Terhubung (Nomor/Sesi: {$user})",
+                            ];
+                        }
+
+                        $qr = $data['qr'] ?? $data['qrcode'] ?? $data['qr_code'] ?? $data['image'] ?? null;
+                        if ($qr) {
+                            return [
+                                'status' => 'qr_ready',
+                                'qr' => $qr,
+                                'user' => null,
+                                'message' => 'Silakan scan Barcode QR WhatsApp ini dengan HP Anda.',
+                            ];
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    continue;
+                }
+            }
+
+            return [
+                'status' => 'offline',
+                'qr' => null,
+                'user' => null,
+                'message' => 'Gagal terhubung ke Server Baileys WA Gateway ('.$baseUrl.'). Pastikan service Node.js Baileys sedang berjalan.',
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'offline',
+                'qr' => null,
+                'user' => null,
+                'message' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Format Indonesian phone numbers (e.g. 08123456789 -> 628123456789).
      */
     public function formatPhoneNumber(string $phone): string

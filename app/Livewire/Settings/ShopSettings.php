@@ -43,6 +43,12 @@ class ShopSettings extends Component
 
     public $wa_test_result = '';
 
+    public $wa_qr_code = null;
+
+    public $wa_connection_status = 'offline';
+
+    public $wa_status_message = '';
+
     public $slug = '';
 
     public $success_message = '';
@@ -149,6 +155,19 @@ class ShopSettings extends Component
         } else {
             $this->wa_test_result = 'Gagal terhubung ke Server WA Gateway ('.$this->wa_gateway_url.'). Pastikan service Baileys/Gateway sedang aktif.';
         }
+    }
+
+    public function checkBaileysQrStatus()
+    {
+        $waService = new WhatsAppService;
+        $res = $waService->fetchBaileysStatusAndQr(
+            $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
+            $this->wa_api_key ?: ''
+        );
+
+        $this->wa_connection_status = $res['status'] ?? 'offline';
+        $this->wa_qr_code = $res['qr'] ?? null;
+        $this->wa_status_message = $res['message'] ?? '';
     }
 
     public function removeQrisImage()

@@ -143,6 +143,53 @@
                                 </div>
                             </div>
 
+                            <!-- Live Baileys WhatsApp Web QR Code Scan Box -->
+                            <div class="p-4 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-bold text-xs text-zinc-900 dark:text-white">Status Sesi & Barcode QR WhatsApp (Baileys)</h4>
+                                        <p class="text-[11px] text-zinc-500">Pindai (*scan*) QR Code berikut menggunakan aplikasi WhatsApp di HP Anda untuk menghubungkan sesi.</p>
+                                    </div>
+
+                                    <button 
+                                        type="button" 
+                                        wire:click="checkBaileysQrStatus" 
+                                        class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        <span>Cek Status / Muat QR</span>
+                                    </button>
+                                </div>
+
+                                @if($wa_connection_status === 'connected')
+                                    <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        </div>
+                                        <div>
+                                            <span class="font-bold text-xs text-emerald-900 dark:text-emerald-300 block">Sesi WhatsApp Terhubung!</span>
+                                            <span class="text-[11px] text-emerald-700 dark:text-emerald-400">{{ $wa_status_message }}</span>
+                                        </div>
+                                    </div>
+                                @elseif($wa_connection_status === 'qr_ready' && $wa_qr_code)
+                                    <div class="text-center p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-2">
+                                        <div class="bg-white p-3 rounded-2xl inline-block shadow-md border border-zinc-300 mx-auto">
+                                            @if(str_starts_with($wa_qr_code, 'data:image') || str_starts_with($wa_qr_code, 'http'))
+                                                <img src="{{ $wa_qr_code }}" alt="Baileys WhatsApp QR" class="w-48 h-48 object-contain mx-auto" />
+                                            @else
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ urlencode($wa_qr_code) }}" alt="Baileys WhatsApp QR" class="w-48 h-48 object-contain mx-auto" />
+                                            @endif
+                                        </div>
+                                        <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400">Buka WhatsApp di HP &gt; Perangkat Tertaut &gt; Tautkan Perangkat</p>
+                                    </div>
+                                @else
+                                    <div class="p-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-600 dark:text-zinc-400">
+                                        <p class="font-bold text-zinc-900 dark:text-zinc-200 mb-0.5">Status Koneksi Gateway:</p>
+                                        <p class="text-[11px]">{{ $wa_status_message ?: 'Klik tombol "Cek Status / Muat QR" di atas untuk memuat Barcode QR dari server Baileys Gateway Anda.' }}</p>
+                                    </div>
+                                @endif
+                            </div>
+
                             <!-- Testing Connection Tool -->
                             <div class="pt-3 border-t border-zinc-200 dark:border-zinc-700/60 space-y-2">
                                 <flux:label class="font-bold text-xs">Uji Koneksi Pengiriman Pesan WA</flux:label>
