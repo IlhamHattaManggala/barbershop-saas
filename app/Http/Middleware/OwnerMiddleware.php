@@ -16,14 +16,18 @@ class OwnerMiddleware
 
         $user = auth()->user();
 
-        // STRICT OWNER PROTECTION: Only owner role & SuperAdmin can access /owner/* management routes
-        if ($user->role !== 'owner' && ! $user->isSuperAdmin()) {
+        // STRICT EXCLUSIVE OWNER ACCESS: Only owner role can access /owner/* routes
+        if ($user->role !== 'owner') {
+            if ($user->isSuperAdmin()) {
+                return redirect()->route('superadmin.dashboard');
+            }
             if ($user->role === 'cashier') {
                 return redirect()->route('cashier.dashboard');
             }
             if ($user->role === 'barber') {
                 return redirect()->route('barber.dashboard');
             }
+
             abort(403, 'Akses Ditolak! Hanya Owner Barbershop yang berhak mengakses area ini.');
         }
 

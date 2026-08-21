@@ -14,7 +14,20 @@ class SuperAdminMiddleware
             return redirect()->route('login');
         }
 
-        if (! auth()->user()->isSuperAdmin()) {
+        $user = auth()->user();
+
+        // STRICT EXCLUSIVE SUPERADMIN ACCESS: Only superadmin role can access /superadmin/* routes
+        if (! $user->isSuperAdmin()) {
+            if ($user->role === 'owner') {
+                return redirect()->route('owner.dashboard');
+            }
+            if ($user->role === 'cashier') {
+                return redirect()->route('cashier.dashboard');
+            }
+            if ($user->role === 'barber') {
+                return redirect()->route('barber.dashboard');
+            }
+
             abort(403, 'Akses Ditolak! Halaman ini hanya dapat diakses oleh SuperAdmin Platform SaaS.');
         }
 

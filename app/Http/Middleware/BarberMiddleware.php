@@ -19,13 +19,19 @@ class BarberMiddleware
 
         $user = auth()->user();
 
-        // STRICT BARBER PROTECTION: Only barber role (and owner) can access /barber/* workstation routes
-        if ($user->role !== 'barber' && $user->role !== 'owner' && ! $user->isSuperAdmin()) {
+        // STRICT EXCLUSIVE BARBER ACCESS: Only barber role can access /barber/* routes
+        if ($user->role !== 'barber') {
+            if ($user->isSuperAdmin()) {
+                return redirect()->route('superadmin.dashboard');
+            }
+            if ($user->role === 'owner') {
+                return redirect()->route('owner.dashboard');
+            }
             if ($user->role === 'cashier') {
                 return redirect()->route('cashier.dashboard');
             }
 
-            abort(403, 'Akses Ditolak! Hanya Barber Specialist yang berhak mengakses workstation ini.');
+            abort(403, 'Akses Ditolak! Hanya Barber Specialist yang berhak mengakses area ini.');
         }
 
         return $next($request);
