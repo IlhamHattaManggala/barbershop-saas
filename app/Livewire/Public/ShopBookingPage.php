@@ -8,7 +8,9 @@ use App\Models\Service;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\BookingSlotService;
+use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -196,6 +198,19 @@ class ShopBookingPage extends Component
 
             $this->booking_success = true;
             $this->loadSlots();
+
+            // Dispatch automatic WhatsApp booking confirmation if enabled for this tenant
+            try {
+                $createdReservation = Reservation::where('tenant_id', $this->tenant->id)
+                    ->where('reservation_code', $this->created_reservation_code)
+                    ->first();
+                if ($createdReservation) {
+                    (new WhatsAppService)->sendBookingConfirmation($createdReservation);
+                }
+            } catch (\Throwable $waError) {
+                Log::warning('WhatsApp Notification Dispatch Error: '.$waError->getMessage());
+            }
+
             $this->reset(['customer_name', 'customer_phone', 'notes']);
 
         } catch (\Exception $e) {

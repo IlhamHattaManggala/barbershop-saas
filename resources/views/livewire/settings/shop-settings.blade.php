@@ -110,7 +110,60 @@
                     <div>
                         <flux:label>Informasi Rekening Bank Outlet (Opsional)</flux:label>
                         <flux:textarea wire:model="bank_info" rows="2" placeholder="BCA: 1234567890 a/n Gentlemen Studio&#10;Mandiri: 0987654321 a/n Budi Santoso" />
-                        <flux:description class="mt-1">Disertakan pada struk kasir & instruksi transfer manual.</flux:description>
+                        <flux:description class="mt-1">Disertakan pada instruksi transfer manual.</flux:description>
+                    </div>
+                </div>
+
+                <!-- SECTION PENGATURAN WHATSAPP GATEWAY (BAILEYS API) -->
+                <div class="pt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-4">
+                    <div>
+                        <flux:label class="font-bold text-zinc-900 dark:text-white">Pengaturan WhatsApp Gateway (Baileys / Fonnte / Custom API)</flux:label>
+                        <flux:description class="mt-0.5">Kirimi pelanggan pesan notifikasi WhatsApp konfirmasi booking secara otomatis setelah pemesanan pangkas online dibuat.</flux:description>
+
+                        <div class="mt-3 space-y-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40">
+                            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-2xs">
+                                <input type="checkbox" wire:model="wa_enabled" class="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4" />
+                                <div>
+                                    <span class="font-bold text-zinc-900 dark:text-white text-xs block">Aktifkan Notifikasi Konfirmasi Booking via WhatsApp</span>
+                                    <span class="text-[11px] text-zinc-500">Centang opsi ini jika Anda telah menyambungkan server Baileys / WhatsApp Gateway.</span>
+                                </div>
+                            </label>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <flux:label>URL Endpoint WA Gateway (Baileys / Custom)</flux:label>
+                                    <flux:input wire:model="wa_gateway_url" placeholder="http://localhost:3000/send-message" />
+                                    <flux:description class="mt-1">Endpoint HTTP POST server Baileys/Gateway pengirim pesan WhatsApp.</flux:description>
+                                </div>
+
+                                <div>
+                                    <flux:label>API Key / Secret Token (Opsional)</flux:label>
+                                    <flux:input type="password" wire:model="wa_api_key" placeholder="Masukkan Secret Key jika ada" />
+                                    <flux:description class="mt-1">Authorization token header untuk keamanan request gateway.</flux:description>
+                                </div>
+                            </div>
+
+                            <!-- Testing Connection Tool -->
+                            <div class="pt-3 border-t border-zinc-200 dark:border-zinc-700/60 space-y-2">
+                                <flux:label class="font-bold text-xs">Uji Koneksi Pengiriman Pesan WA</flux:label>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <flux:input wire:model="test_wa_phone" placeholder="08123456789" class="flex-1" />
+                                    <button 
+                                        type="button" 
+                                        wire:click="testWhatsAppConnection" 
+                                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer shrink-0"
+                                    >
+                                        Tes Kirim Pesan WA
+                                    </button>
+                                </div>
+
+                                @if(!empty($wa_test_result))
+                                    <div class="p-3 rounded-xl text-xs font-semibold {{ str_contains($wa_test_result, 'BERHASIL') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200' }}">
+                                        {{ $wa_test_result }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
 

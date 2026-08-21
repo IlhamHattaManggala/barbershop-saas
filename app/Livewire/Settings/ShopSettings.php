@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Models\Tenant;
+use App\Services\WhatsAppService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -32,6 +33,16 @@ class ShopSettings extends Component
 
     public $cashier_commission_percentage = 5;
 
+    public $wa_enabled = false;
+
+    public $wa_gateway_url = 'http://localhost:3000/send-message';
+
+    public $wa_api_key = '';
+
+    public $test_wa_phone = '';
+
+    public $wa_test_result = '';
+
     public $slug = '';
 
     public $success_message = '';
@@ -50,6 +61,12 @@ class ShopSettings extends Component
             $this->barber_commission_percentage = $tenant->barber_commission_percentage ?? 40;
             $this->cashier_commission_percentage = $tenant->cashier_commission_percentage ?? 5;
             $this->slug = $tenant->slug;
+
+            $waSettings = $tenant->wa_settings ?? [];
+            $this->wa_enabled = isset($waSettings['enabled']) ? (bool) $waSettings['enabled'] : false;
+            $this->wa_gateway_url = $waSettings['gateway_url'] ?? 'http://localhost:3000/send-message';
+            $this->wa_api_key = $waSettings['api_key'] ?? '';
+            $this->test_wa_phone = $this->phone;
         } else {
             $this->name = 'Gentlemen Barber Studio';
             $this->slug = 'gentlemen-barber';
@@ -66,6 +83,8 @@ class ShopSettings extends Component
             'bank_info' => 'nullable|string|max:500',
             'barber_commission_percentage' => 'required|numeric|min:0|max:100',
             'cashier_commission_percentage' => 'required|numeric|min:0|max:100',
+            'wa_gateway_url' => 'nullable|string|max:255',
+            'wa_api_key' => 'nullable|string|max:255',
             'new_logo' => 'nullable|image|max:2048',
             'new_qris_image' => 'nullable|image|max:3072',
         ]);
@@ -81,6 +100,11 @@ class ShopSettings extends Component
                 'bank_info' => $this->bank_info,
                 'barber_commission_percentage' => $this->barber_commission_percentage,
                 'cashier_commission_percentage' => $this->cashier_commission_percentage,
+                'wa_settings' => [
+                    'enabled' => (bool) $this->wa_enabled,
+                    'gateway_url' => $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
+                    'api_key' => $this->wa_api_key ?: '',
+                ],
             ];
 
             if ($this->new_logo) {
@@ -98,7 +122,32 @@ class ShopSettings extends Component
             }
 
             $tenant->update($data);
-            $this->success_message = 'Pengaturan Outlet Barbershop & Barcode QRIS Berhasil Disimpan!';
+            $this->success_message = 'Pengaturan Toko & WhatsApp Gateway Berhasil Disimpan!';
+        }
+    }
+
+    public function testWhatsAppConnection()
+    {
+        if (empty($this->test_wa_phone)) {
+            $this->wa_test_result = 'Harap isi Nomor WhatsApp tujuan tes terlebih dahulu.';
+
+            return;
+        }
+
+        $waService = new WhatsAppService;
+        $testMsg = "*TES KONEKSI WHATSAPP GATEWAY*\n\nPesan tes pengujian sistem Notifikasi WhatsApp Barbershop SaaS berhasil diterima di nomor Anda.";
+
+        $settings = [
+            'gateway_url' => $this->wa_gateway_url ?: 'http://localhost:3000/send-message',
+            'api_key' => $this->wa_api_key ?: '',
+        ];
+
+        $success = $waService->sendCustomMessage($this->test_wa_phone, $testMsg, $settings);
+
+        if ($success) {
+            $this->wa_test_result = 'Pesan tes WhatsApp BERHASIL dikirim ke '.$this->test_wa_phone.'!';
+        } else {
+            $this->wa_test_result = 'Gagal terhubung ke Server WA Gateway ('.$this->wa_gateway_url.'). Pastikan service Baileys/Gateway sedang aktif.';
         }
     }
 
