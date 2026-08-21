@@ -70,8 +70,9 @@ require __DIR__.'/settings.php';
 // PUBLIC STANDALONE THEME PREVIEW PORTAL (/themes/preview/{themeSlug})
 Route::get('themes/preview/{themeSlug}', ThemePreviewPage::class)->name('theme.preview');
 
-// PUBLIC TENANT BOOKING SUCCESS LANDING PAGE
-Route::get('{slug}/booking/success/{reservationCode}', BookingSuccessPage::class)->name('tenant.booking.success');
+// PAKASIR PAYMENT GATEWAY THEME PURCHASE CALLBACK LANDING PAGES
+Route::get('payment/success', PaymentSuccessPage::class)->name('payment.success');
+Route::get('payment/failed', PaymentFailedPage::class)->name('payment.failed');
 
 // PUBLIC TENANT RESERVATION PORTAL (/{slug} e.g. /gentlemen-barber)
 Route::get('{slug}', ShopBookingPage::class)->name('tenant.public');

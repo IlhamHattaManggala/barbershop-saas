@@ -175,7 +175,7 @@ class ThemeSettings extends Component
         $this->pakasirPayUrl = $pakasirService->createPaymentUrl(
             (int) $theme->price,
             $this->paymentReference,
-            route('owner.theme.edit')
+            route('payment.success')
         );
 
         $this->showPaymentModal = true;
