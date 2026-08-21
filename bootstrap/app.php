@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\BarberMiddleware;
+use App\Http\Middleware\CashierMiddleware;
 use App\Http\Middleware\OwnerMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
@@ -18,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'superadmin' => SuperAdminMiddleware::class,
             'owner' => OwnerMiddleware::class,
+            'cashier' => CashierMiddleware::class,
+            'barber' => BarberMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

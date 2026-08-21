@@ -38,13 +38,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     // CASHIER DEDICATED DASHBOARD & POS
-    Route::get('cashier/dashboard', CashierDashboard::class)->name('cashier.dashboard');
-    Route::get('cashier/pos', KasirPos::class)->name('pos');
-    Route::redirect('pos', 'cashier/pos');
+    Route::middleware(['cashier'])->group(function () {
+        Route::get('cashier/dashboard', CashierDashboard::class)->name('cashier.dashboard');
+        Route::get('cashier/pos', KasirPos::class)->name('pos');
+        Route::redirect('pos', 'cashier/pos');
+    });
 
     // BARBER DEDICATED DASHBOARD & WORKSTATION
-    Route::get('barber/dashboard', BarberDashboard::class)->name('barber.dashboard');
-    Route::get('barber/reservations', PapanReservasi::class)->name('barber.reservations');
+    Route::middleware(['barber'])->group(function () {
+        Route::get('barber/dashboard', BarberDashboard::class)->name('barber.dashboard');
+        Route::get('barber/reservations', PapanReservasi::class)->name('barber.reservations');
+    });
 
     Route::get('reservations', PapanReservasi::class)->name('reservations');
     Route::get('feedback', UserFeedbackForm::class)->name('user.feedback');
