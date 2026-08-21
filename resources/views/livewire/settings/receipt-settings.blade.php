@@ -32,8 +32,16 @@
                     </div>
 
                     <div class="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                        <flux:label class="font-bold text-xs">Opsi Tampilan Struk</flux:label>
+                        <flux:label class="font-bold text-xs">Opsi & Status Struk Kasir</flux:label>
                         <div class="space-y-2.5 text-xs">
+                            <label class="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                                <input type="checkbox" wire:model.live="receipt_enable_print" class="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4" />
+                                <div>
+                                    <span class="font-bold text-indigo-950 dark:text-indigo-200 block">Aktifkan Pop-up Struk Thermal Otomatis di POS</span>
+                                    <span class="text-[11px] text-indigo-700 dark:text-indigo-300">Hilangkan centang ini jika toko Anda tidak menggunakan printer thermal.</span>
+                                </div>
+                            </label>
+
                             <label class="flex items-center gap-2.5 cursor-pointer">
                                 <input type="checkbox" wire:model.live="receipt_show_logo" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" />
                                 <span class="font-semibold text-zinc-800 dark:text-zinc-200">Tampilkan Logo Outlet di Bagian Atas Struk</span>

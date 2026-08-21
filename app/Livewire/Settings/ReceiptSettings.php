@@ -17,6 +17,8 @@ class ReceiptSettings extends Component
 
     public $receipt_show_barber = true;
 
+    public $receipt_enable_print = true;
+
     public $success_message = '';
 
     public function mount()
@@ -29,6 +31,7 @@ class ReceiptSettings extends Component
             $this->receipt_footer_text = $receiptSettings['footer_text'] ?? 'Terima kasih atas kunjungan Anda. Harap simpan struk ini sebagai bukti pembayaran resmi.';
             $this->receipt_show_logo = isset($receiptSettings['show_logo']) ? (bool) $receiptSettings['show_logo'] : true;
             $this->receipt_show_barber = isset($receiptSettings['show_barber']) ? (bool) $receiptSettings['show_barber'] : true;
+            $this->receipt_enable_print = isset($receiptSettings['enable_print']) ? (bool) $receiptSettings['enable_print'] : true;
         }
     }
 
@@ -50,6 +53,7 @@ class ReceiptSettings extends Component
                     'footer_text' => $this->receipt_footer_text,
                     'show_logo' => (bool) $this->receipt_show_logo,
                     'show_barber' => (bool) $this->receipt_show_barber,
+                    'enable_print' => (bool) $this->receipt_enable_print,
                 ],
             ]);
 

@@ -276,8 +276,12 @@ class KasirPos extends Component
             }
         }
 
+        $tenant = auth()->user()->tenant;
+        $rSettings = $tenant ? ($tenant->receipt_settings ?? []) : [];
+        $enablePrint = isset($rSettings['enable_print']) ? (bool) $rSettings['enable_print'] : true;
+
         $this->last_transaction = $transaction->load(['items.barber', 'cashier', 'tenant']);
-        $this->showReceiptModal = true;
+        $this->showReceiptModal = $enablePrint;
         $this->success_message = 'Transaksi '.$transaction->transaction_number.' Berhasil Dibuat!';
         $this->clearCart();
     }
