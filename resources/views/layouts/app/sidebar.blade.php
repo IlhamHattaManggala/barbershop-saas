@@ -15,6 +15,10 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
+            @if(auth()->check() && auth()->user()->isOwner())
+                <livewire:navigation.outlet-switcher />
+            @endif
+
             <flux:sidebar.search placeholder="Cari..." />
 
             <flux:sidebar.nav>

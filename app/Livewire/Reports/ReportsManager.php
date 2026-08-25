@@ -25,8 +25,8 @@ class ReportsManager extends Component
 
     public function render()
     {
-        $tenant = auth()->user()->tenant;
-        $tenantId = auth()->user()->tenant_id;
+        $tenant = auth()->user()->active_tenant ?? auth()->user()->tenant;
+        $tenantId = $tenant ? $tenant->id : (auth()->user()->tenant_id ?? 1);
 
         $barberCommissionPercentage = $tenant ? (float) ($tenant->barber_commission_percentage ?? 40) : 40.0;
         $cashierCommissionPercentage = $tenant ? (float) ($tenant->cashier_commission_percentage ?? 5) : 5.0;

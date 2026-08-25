@@ -43,7 +43,7 @@ class ServicesManager extends Component
             'duration_minutes' => 'required|integer|min:5',
         ]);
 
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         Service::create([
             'tenant_id' => $tenantId,
@@ -117,7 +117,7 @@ class ServicesManager extends Component
 
     public function render()
     {
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         $services = Service::where('tenant_id', $tenantId)
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))

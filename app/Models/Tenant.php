@@ -62,8 +62,15 @@ class Tenant extends Model
         }
 
         $purchased = is_array($this->purchased_themes) ? $this->purchased_themes : (json_decode($this->purchased_themes ?? '[]', true) ?: []);
+        if (in_array($themeSlug, $purchased)) {
+            return true;
+        }
 
-        return in_array($themeSlug, $purchased);
+        if ($this->owner && is_array($this->owner->purchased_themes) && in_array($themeSlug, $this->owner->purchased_themes)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function owner(): BelongsTo

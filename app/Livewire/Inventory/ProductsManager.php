@@ -59,7 +59,7 @@ class ProductsManager extends Component
             'stock' => 'required|integer|min:0',
         ]);
 
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         $product = Product::create([
             'tenant_id' => $tenantId,
@@ -219,7 +219,7 @@ class ProductsManager extends Component
 
     public function render()
     {
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         $products = Product::where('tenant_id', $tenantId)
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))

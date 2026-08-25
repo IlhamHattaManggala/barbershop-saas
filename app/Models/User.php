@@ -21,8 +21,11 @@ class User extends Authenticatable implements PasskeyUser
         'email',
         'password',
         'tenant_id',
+        'current_tenant_id',
         'role',
         'phone',
+        'allowed_outlets',
+        'purchased_themes',
     ];
 
     protected $hidden = [
@@ -37,12 +40,53 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'allowed_outlets' => 'integer',
+            'purchased_themes' => 'array',
         ];
     }
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    public function currentTenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'current_tenant_id');
+    }
+
+    public function ownedTenants()
+    {
+        return $this->hasMany(Tenant::class, 'owner_id');
+    }
+
+    public function getActiveTenantIdAttribute()
+    {
+        return $this->current_tenant_id ?: $this->tenant_id;
+    }
+
+    public function getActiveTenantAttribute()
+    {
+        $id = $this->active_tenant_id;
+        if (! $id) {
+            return $this->tenant;
+        }
+
+        return Tenant::find($id) ?: $this->tenant;
+    }
+
+    public function hasPurchasedTheme(string $themeSlug): bool
+    {
+        $userPurchases = is_array($this->purchased_themes) ? $this->purchased_themes : (json_decode($this->purchased_themes ?? '[]', true) ?: []);
+        if (in_array($themeSlug, $userPurchases)) {
+            return true;
+        }
+
+        if ($this->tenant && $this->tenant->hasPurchasedTheme($themeSlug)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function isSuperAdmin(): bool

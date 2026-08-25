@@ -102,6 +102,7 @@ class ThemeSettings extends Component
 
         // Jika transaksi terverifikasi completed di Pakasir atau dipanggil dari redirect
         if (in_array($status, ['completed', 'success', 'paid']) || request()->has('order_id')) {
+            $user = auth()->user();
             $purchased = is_array($tenant->purchased_themes) ? $tenant->purchased_themes : (json_decode($tenant->purchased_themes ?? '[]', true) ?: []);
             if (! in_array($themeSlug, $purchased)) {
                 $purchased[] = $themeSlug;
@@ -112,8 +113,16 @@ class ThemeSettings extends Component
                 'theme' => $themeSlug,
             ]);
 
+            if ($user) {
+                $userPurchases = is_array($user->purchased_themes) ? $user->purchased_themes : (json_decode($user->purchased_themes ?? '[]', true) ?: []);
+                if (! in_array($themeSlug, $userPurchases)) {
+                    $userPurchases[] = $themeSlug;
+                }
+                $user->update(['purchased_themes' => array_values(array_unique($userPurchases))]);
+            }
+
             $this->active_theme = $themeSlug;
-            $this->success_message = "Pembayaran Pakasir untuk tema '".($theme->name ?? $themeSlug)."' telah TERKONFIRMASI! Tema berhasil dibuka & diaktifkan.";
+            $this->success_message = "Pembayaran Pakasir untuk tema '".($theme->name ?? $themeSlug)."' telah TERKONFIRMASI! Tema berhasil dibuka & diaktifkan untuk seluruh cabang Anda.";
             $this->closePaymentModal();
         } else {
             $this->paymentModalStatus = 'Status pembayaran masih PENDING di Pakasir.';
@@ -144,13 +153,14 @@ class ThemeSettings extends Component
             return;
         }
 
-        $tenant = auth()->user()->tenant;
+        $user = auth()->user();
+        $tenant = $user ? $user->active_tenant : null;
         if (! $tenant) {
             return;
         }
 
-        // Cek apakah tema premium dan belum dibeli oleh tenant ini
-        if ($theme->isPremium() && ! $tenant->hasPurchasedTheme($themeKey)) {
+        // Cek apakah tema premium dan belum dibeli oleh user / tenant ini
+        if ($theme->isPremium() && ! $user->hasPurchasedTheme($themeKey)) {
             $this->openPaymentModal($theme);
 
             return;
@@ -158,12 +168,13 @@ class ThemeSettings extends Component
 
         $tenant->update(['theme' => $themeKey]);
         $this->active_theme = $themeKey;
-        $this->success_message = "Tema Website '{$theme->name}' Berhasil Diterapkan!";
+        $this->success_message = "Tema Website '{$theme->name}' Berhasil Diterapkan pada {$tenant->name}!";
     }
 
     public function openPaymentModal($theme)
     {
-        $tenant = auth()->user()->tenant;
+        $user = auth()->user();
+        $tenant = $user ? $user->active_tenant : null;
         $tenantId = $tenant ? $tenant->id : 0;
 
         $this->paymentThemeSlug = $theme->slug;
@@ -189,7 +200,8 @@ class ThemeSettings extends Component
 
     public function processPakasirPayment()
     {
-        $tenant = auth()->user()->tenant;
+        $user = auth()->user();
+        $tenant = $user ? $user->active_tenant : null;
         if (! $tenant || ! $this->paymentThemeSlug) {
             return;
         }
@@ -200,12 +212,20 @@ class ThemeSettings extends Component
         }
 
         $tenant->update([
-            'purchased_themes' => $purchased,
+            'purchased_themes' => array_values(array_unique($purchased)),
             'theme' => $this->paymentThemeSlug,
         ]);
 
+        if ($user) {
+            $userPurchases = is_array($user->purchased_themes) ? $user->purchased_themes : (json_decode($user->purchased_themes ?? '[]', true) ?: []);
+            if (! in_array($this->paymentThemeSlug, $userPurchases)) {
+                $userPurchases[] = $this->paymentThemeSlug;
+            }
+            $user->update(['purchased_themes' => array_values(array_unique($userPurchases))]);
+        }
+
         $this->active_theme = $this->paymentThemeSlug;
-        $this->success_message = "Pembayaran via Pakasir BERHASIL! Tema '{$this->paymentThemeName}' telah dibuka & aktif.";
+        $this->success_message = "Pembayaran via Pakasir BERHASIL! Tema '{$this->paymentThemeName}' telah dibuka & aktif untuk seluruh cabang Anda.";
         $this->closePaymentModal();
     }
 

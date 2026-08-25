@@ -43,7 +43,7 @@ class StaffManager extends Component
             'role' => 'required|in:barber,cashier',
         ]);
 
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         User::create([
             'name' => $this->name,
@@ -118,7 +118,7 @@ class StaffManager extends Component
 
     public function render()
     {
-        $tenantId = auth()->user()->tenant_id ?? 1;
+        $tenantId = auth()->user()->active_tenant_id ?? auth()->user()->tenant_id ?? 1;
 
         $staffMembers = User::where('tenant_id', $tenantId)
             ->whereIn('role', ['owner', 'cashier', 'barber'])
