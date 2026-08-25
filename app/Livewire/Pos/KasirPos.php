@@ -49,6 +49,14 @@ class KasirPos extends Component
 
     public $last_transaction = null;
 
+    public $discount_amount = 0;
+
+    public $is_split_payment = false;
+
+    public $second_payment_method = 'qris';
+
+    public $second_payment_amount = 0;
+
     public function closeReceiptModal()
     {
         $this->showReceiptModal = false;
@@ -74,6 +82,23 @@ class KasirPos extends Component
                 }
             }
         }
+    }
+
+    public function getManualWaLinkProperty()
+    {
+        if (! $this->last_transaction || empty($this->last_transaction->customer_phone)) {
+            return null;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $this->last_transaction->customer_phone);
+        if (str_starts_with($phone, '0')) {
+            $phone = '62'.substr($phone, 1);
+        }
+
+        $tenantName = auth()->user()->tenant->name ?? 'Barbershop';
+        $message = "Halo {$this->last_transaction->customer_name},\n\nTerima kasih telah berkunjung ke {$tenantName}.\nNota: {$this->last_transaction->transaction_number}\nTotal Pembayaran: Rp ".number_format($this->last_transaction->total_amount, 0, ',', '.')."\nMetode: ".strtoupper($this->last_transaction->payment_method)."\n\nSampai jumpa di kunjungan berikutnya!";
+
+        return 'https://wa.me/'.$phone.'?text='.urlencode($message);
     }
 
     public function saveBase64PaymentProof($base64Data)
@@ -176,6 +201,9 @@ class KasirPos extends Component
         $this->cart = [];
         $this->cash_paid = 0;
         $this->discount = 0;
+        $this->discount_amount = 0;
+        $this->is_split_payment = false;
+        $this->second_payment_amount = 0;
         $this->reset('payment_proof_photo', 'base64_payment_proof');
     }
 
@@ -191,31 +219,43 @@ class KasirPos extends Component
 
         $tenantId = auth()->user()->tenant_id ?? 1;
         $subtotal = array_sum(array_column($this->cart, 'subtotal'));
-        $totalAmount = max(0, $subtotal - $this->discount + $this->tax);
+        $effectiveDiscount = (float) ($this->discount_amount > 0 ? $this->discount_amount : $this->discount);
+        $totalAmount = max(0, $subtotal - $effectiveDiscount + $this->tax);
 
-        // 1. Strict Validation: Cash Payment must be greater than or equal to total amount
-        if ($this->payment_method === 'cash') {
-            $cashInput = (float) $this->cash_paid;
-            if ($cashInput < $totalAmount) {
-                $this->addError('cash_paid', 'Uang tunai yang diterima (Rp '.number_format($cashInput, 0, ',', '.').') kurang dari total tagihan (Rp '.number_format($totalAmount, 0, ',', '.').').');
+        // Split payment validation
+        if ($this->is_split_payment) {
+            $firstPayment = (float) $this->cash_paid;
+            $secondPayment = (float) $this->second_payment_amount;
+
+            if (($firstPayment + $secondPayment) < $totalAmount) {
+                $this->addError('cash_paid', 'Total kombinasi 2 pembayaran (Rp '.number_format($firstPayment + $secondPayment, 0, ',', '.').') kurang dari tagihan (Rp '.number_format($totalAmount, 0, ',', '.').').');
 
                 return;
             }
-            $cashPaid = $cashInput;
+            $cashPaid = $firstPayment;
         } else {
-            $cashPaid = $totalAmount;
+            if ($this->payment_method === 'cash') {
+                $cashInput = (float) $this->cash_paid;
+                if ($cashInput < $totalAmount) {
+                    $this->addError('cash_paid', 'Uang tunai yang diterima (Rp '.number_format($cashInput, 0, ',', '.').') kurang dari total tagihan (Rp '.number_format($totalAmount, 0, ',', '.').').');
+
+                    return;
+                }
+                $cashPaid = $cashInput;
+            } else {
+                $cashPaid = $totalAmount;
+            }
         }
 
-        // 2. Strict Validation: QRIS & Transfer must have a Payment Proof photo (Camera or Upload)
-        if (in_array($this->payment_method, ['qris', 'transfer'])) {
+        if (in_array($this->payment_method, ['qris', 'transfer']) || ($this->is_split_payment && in_array($this->second_payment_method, ['qris', 'transfer']))) {
             if (empty($this->base64_payment_proof) && empty($this->payment_proof_photo)) {
-                $this->addError('payment_proof', 'Bukti pembayaran (Foto Kamera/Upload File) wajib disertakan untuk metode '.strtoupper($this->payment_method).'.');
+                $this->addError('payment_proof', 'Bukti pembayaran (Foto Kamera/Upload File) wajib disertakan untuk metode transfer/QRIS.');
 
                 return;
             }
         }
 
-        $changeDue = max(0, $cashPaid - $totalAmount);
+        $changeDue = $this->is_split_payment ? 0 : max(0, $cashPaid - $totalAmount);
 
         $proofPath = null;
         if ($this->base64_payment_proof) {
@@ -237,11 +277,14 @@ class KasirPos extends Component
             'cashier_user_id' => auth()->id(),
             'subtotal' => $subtotal,
             'tax' => $this->tax,
-            'discount' => $this->discount,
+            'discount' => $effectiveDiscount,
+            'discount_amount' => $effectiveDiscount,
             'total_amount' => $totalAmount,
             'cash_paid' => $cashPaid,
             'change_due' => $changeDue,
             'payment_method' => $this->payment_method,
+            'second_payment_method' => $this->is_split_payment ? $this->second_payment_method : null,
+            'second_payment_amount' => $this->is_split_payment ? $this->second_payment_amount : 0,
             'payment_proof' => $proofPath,
             'status' => 'paid',
         ]);
@@ -259,11 +302,20 @@ class KasirPos extends Component
                 'subtotal' => $item['subtotal'],
             ]);
 
-            // Deduct product stock
+            // Deduct product stock & log StockMovement
             if ($item['type'] === 'product') {
                 $product = Product::find($item['id']);
                 if ($product) {
                     $product->decrement('stock', $item['qty']);
+
+                    \App\Models\StockMovement::create([
+                        'tenant_id' => $tenantId,
+                        'product_id' => $product->id,
+                        'type' => 'sale',
+                        'quantity' => -$item['qty'],
+                        'notes' => 'Penjualan POS Nota '.$transaction->transaction_number,
+                        'created_by' => auth()->id(),
+                    ]);
                 }
             }
         }

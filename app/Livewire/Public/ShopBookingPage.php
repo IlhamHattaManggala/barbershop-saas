@@ -32,6 +32,8 @@ class ShopBookingPage extends Component
 
     public $notes = '';
 
+    public $haircut_notes = '';
+
     public $booking_success = false;
 
     public $created_reservation_code = '';
@@ -191,6 +193,7 @@ class ShopBookingPage extends Component
                     'end_time' => $endTimeFormatted,
                     'status' => 'pending',
                     'notes' => $this->notes,
+                    'haircut_notes' => $this->haircut_notes,
                 ]);
 
                 $this->created_reservation_code = $code;
@@ -211,7 +214,7 @@ class ShopBookingPage extends Component
                 Log::warning('WhatsApp Notification Dispatch Error: '.$waError->getMessage());
             }
 
-            $this->reset(['customer_name', 'customer_phone', 'notes']);
+            $this->reset(['customer_name', 'customer_phone', 'notes', 'haircut_notes']);
 
         } catch (\Exception $e) {
             $this->addError('start_time', $e->getMessage());

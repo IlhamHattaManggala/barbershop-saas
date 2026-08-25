@@ -91,6 +91,25 @@ class PapanReservasi extends Component
         return redirect()->to('/pos?reservation_id='.$reservationId);
     }
 
+    public $haircut_notes = '';
+
+    public function getManualWaLink($phone, $name, $code)
+    {
+        if (empty($phone)) {
+            return null;
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($cleanPhone, '0')) {
+            $cleanPhone = '62'.substr($cleanPhone, 1);
+        }
+
+        $tenantName = auth()->user()->tenant->name ?? 'Barbershop';
+        $message = "Halo {$name},\n\nPengingat Jadwal Reservasi Pangkas di {$tenantName}.\nKode: {$code}\nTanggal: {$this->reservation_date}\n\nSampai jumpa di lokasi!";
+
+        return 'https://wa.me/'.$cleanPhone.'?text='.urlencode($message);
+    }
+
     public function createReservation()
     {
         $this->validate([
@@ -121,10 +140,11 @@ class PapanReservasi extends Component
             'end_time' => $endTime,
             'status' => 'confirmed',
             'notes' => $this->notes,
+            'haircut_notes' => $this->haircut_notes,
         ]);
 
         $this->success_message = 'Reservasi Baru Berhasil Dijadwalkan!';
-        $this->reset(['customer_name', 'customer_phone', 'notes']);
+        $this->reset(['customer_name', 'customer_phone', 'notes', 'haircut_notes']);
 
         if (auth()->check() && auth()->user()->role === 'barber') {
             $this->barber_user_id = auth()->id();

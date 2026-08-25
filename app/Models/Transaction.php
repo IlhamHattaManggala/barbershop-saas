@@ -21,10 +21,13 @@ class Transaction extends Model
         'subtotal',
         'tax',
         'discount',
+        'discount_amount',
         'total_amount',
         'cash_paid',
         'change_due',
         'payment_method',
+        'second_payment_method',
+        'second_payment_amount',
         'payment_proof',
         'status',
     ];
@@ -33,9 +36,11 @@ class Transaction extends Model
         'subtotal' => 'decimal:2',
         'tax' => 'decimal:2',
         'discount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'cash_paid' => 'decimal:2',
         'change_due' => 'decimal:2',
+        'second_payment_amount' => 'decimal:2',
     ];
 
     public function tenant(): BelongsTo

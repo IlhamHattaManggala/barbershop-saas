@@ -23,6 +23,7 @@ class Reservation extends Model
         'end_time',
         'status',
         'notes',
+        'haircut_notes',
     ];
 
     public function tenant(): BelongsTo

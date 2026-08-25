@@ -3,6 +3,7 @@
 namespace App\Livewire\Inventory;
 
 use App\Models\Product;
+use App\Models\StockMovement;
 use Livewire\Component;
 
 class ProductsManager extends Component
@@ -43,6 +44,13 @@ class ProductsManager extends Component
 
     public $deleting_product_name = '';
 
+    // Stock Adjustment State
+    public $adj_product_id = null;
+    public $adj_product_name = '';
+    public $adj_type = 'purchase'; // purchase, adjustment, return
+    public $adj_qty = 1;
+    public $adj_notes = '';
+
     public function createProduct()
     {
         $this->validate([
@@ -53,7 +61,7 @@ class ProductsManager extends Component
 
         $tenantId = auth()->user()->tenant_id ?? 1;
 
-        Product::create([
+        $product = Product::create([
             'tenant_id' => $tenantId,
             'name' => $this->name,
             'category' => $this->category,
@@ -63,6 +71,17 @@ class ProductsManager extends Component
             'description' => $this->description,
             'is_active' => true,
         ]);
+
+        if ($this->stock > 0) {
+            StockMovement::create([
+                'tenant_id' => $tenantId,
+                'product_id' => $product->id,
+                'type' => 'purchase',
+                'quantity' => $this->stock,
+                'notes' => 'Stok awal produk baru',
+                'created_by' => auth()->id(),
+            ]);
+        }
 
         $this->success_message = "Produk '{$this->name}' Berhasil Ditambahkan!";
         $this->reset(['name', 'price', 'stock', 'description']);
@@ -89,17 +108,71 @@ class ProductsManager extends Component
         ]);
 
         $product = Product::findOrFail($this->editing_product_id);
+        $oldStock = $product->stock;
+        $newStock = (int) $this->edit_stock;
+
         $product->update([
             'name' => $this->edit_name,
             'category' => $this->edit_category,
             'price' => $this->edit_price,
-            'stock' => $this->edit_stock,
+            'stock' => $newStock,
             'min_stock' => $this->edit_min_stock,
             'description' => $this->edit_description,
         ]);
 
+        if ($newStock !== $oldStock) {
+            $diff = $newStock - $oldStock;
+            StockMovement::create([
+                'tenant_id' => $product->tenant_id,
+                'product_id' => $product->id,
+                'type' => 'adjustment',
+                'quantity' => $diff,
+                'notes' => 'Penyesuaian stok via edit produk',
+                'created_by' => auth()->id(),
+            ]);
+        }
+
         $this->success_message = "Produk '{$product->name}' Berhasil Diperbarui!";
         $this->reset(['editing_product_id', 'edit_name', 'edit_price', 'edit_stock', 'edit_description']);
+    }
+
+    public function openStockAdjustmentModal($productId)
+    {
+        $product = Product::findOrFail($productId);
+        $this->adj_product_id = $product->id;
+        $this->adj_product_name = $product->name;
+        $this->adj_type = 'purchase';
+        $this->adj_qty = 1;
+        $this->adj_notes = '';
+    }
+
+    public function submitStockAdjustment()
+    {
+        $this->validate([
+            'adj_qty' => 'required|integer|not_in:0',
+        ]);
+
+        $product = Product::findOrFail($this->adj_product_id);
+        $qtyChange = (int) $this->adj_qty;
+
+        if ($this->adj_type === 'return' && $qtyChange > 0) {
+            $qtyChange = -$qtyChange;
+        }
+
+        $newStock = max(0, $product->stock + $qtyChange);
+        $product->update(['stock' => $newStock]);
+
+        StockMovement::create([
+            'tenant_id' => $product->tenant_id,
+            'product_id' => $product->id,
+            'type' => $this->adj_type,
+            'quantity' => $qtyChange,
+            'notes' => $this->adj_notes ?: 'Penyesuaian stok manual',
+            'created_by' => auth()->id(),
+        ]);
+
+        $this->success_message = "Stok '{$product->name}' Berhasil Diperbarui ({$qtyChange})!";
+        $this->reset(['adj_product_id', 'adj_product_name', 'adj_type', 'adj_qty', 'adj_notes']);
     }
 
     public function confirmDeleteProduct($id)
@@ -125,7 +198,22 @@ class ProductsManager extends Component
     {
         $product = Product::find($productId);
         if ($product) {
-            $product->update(['stock' => max(0, $newStock)]);
+            $oldStock = $product->stock;
+            $updatedStock = max(0, $newStock);
+            $diff = $updatedStock - $oldStock;
+            
+            $product->update(['stock' => $updatedStock]);
+
+            if ($diff !== 0) {
+                StockMovement::create([
+                    'tenant_id' => $product->tenant_id,
+                    'product_id' => $product->id,
+                    'type' => 'adjustment',
+                    'quantity' => $diff,
+                    'notes' => 'Quick adjustment (+/-)',
+                    'created_by' => auth()->id(),
+                ]);
+            }
         }
     }
 
@@ -138,8 +226,15 @@ class ProductsManager extends Component
             ->latest()
             ->get();
 
+        $stockMovements = StockMovement::with(['product', 'creator'])
+            ->where('tenant_id', $tenantId)
+            ->latest()
+            ->take(15)
+            ->get();
+
         return view('livewire.inventory.products-manager', [
             'products' => $products,
+            'stockMovements' => $stockMovements,
         ])->layout('layouts.app');
     }
 }

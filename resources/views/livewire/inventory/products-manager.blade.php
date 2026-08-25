@@ -71,6 +71,11 @@
                         </flux:table.cell>
                         <flux:table.cell>
                             <div class="flex items-center gap-2">
+                                <flux:modal.trigger name="stock-adjustment-modal">
+                                    <flux:button wire:click="openStockAdjustmentModal({{ $p->id }})" size="xs" variant="subtle" icon="arrows-up-down">
+                                        Stok
+                                    </flux:button>
+                                </flux:modal.trigger>
                                 <flux:modal.trigger name="edit-product-modal">
                                     <flux:button wire:click="editProduct({{ $p->id }})" size="xs" variant="subtle" icon="pencil-square">
                                         Edit
@@ -88,6 +93,66 @@
                     <flux:table.row>
                         <flux:table.cell colspan="6" class="text-center py-6 text-zinc-400 text-xs">
                             Belum ada produk retail terdaftar.
+                        </flux:table.cell>
+                    </flux:table.row>
+                @endforelse
+            </flux:table.rows>
+        </flux:table>
+    </flux:card>
+
+    <!-- Audit Trail: Stock Movements History Card -->
+    <flux:card class="p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-700">
+            <div>
+                <flux:heading size="lg">Audit Trail & Riwayat Pergerakan Stok</flux:heading>
+                <flux:subheading>Log otomatis transaksi keluar-masuk stok barang retail.</flux:subheading>
+            </div>
+        </div>
+
+        <flux:table>
+            <flux:table.columns>
+                <flux:table.column>Waktu & Tanggal</flux:table.column>
+                <flux:table.column>Produk</flux:table.column>
+                <flux:table.column>Tipe Pergerakan</flux:table.column>
+                <flux:table.column>Jumlah (Qty)</flux:table.column>
+                <flux:table.column>Catatan / Keterangan</flux:table.column>
+                <flux:table.column>Petugas</flux:table.column>
+            </flux:table.columns>
+
+            <flux:table.rows>
+                @forelse($stockMovements as $sm)
+                    <flux:table.row key="{{ $sm->id }}">
+                        <flux:table.cell class="font-mono text-xs text-zinc-500">
+                            {{ $sm->created_at->format('d/m/Y H:i') }}
+                        </flux:table.cell>
+                        <flux:table.cell class="font-bold text-xs">
+                            {{ $sm->product->name ?? 'Produk Dihapus' }}
+                        </flux:table.cell>
+                        <flux:table.cell>
+                            @if($sm->type === 'purchase')
+                                <flux:badge size="sm" color="emerald">Stok Masuk (Beli)</flux:badge>
+                            @elseif($sm->type === 'sale')
+                                <flux:badge size="sm" color="indigo">Penjualan POS</flux:badge>
+                            @elseif($sm->type === 'return')
+                                <flux:badge size="sm" color="amber">Retur Barang</flux:badge>
+                            @else
+                                <flux:badge size="sm" color="zinc">Adjustment Manual</flux:badge>
+                            @endif
+                        </flux:table.cell>
+                        <flux:table.cell class="font-mono font-bold text-xs">
+                            {{ $sm->quantity > 0 ? '+'.$sm->quantity : $sm->quantity }}
+                        </flux:table.cell>
+                        <flux:table.cell class="text-xs text-zinc-500">
+                            {{ $sm->notes ?? '-' }}
+                        </flux:table.cell>
+                        <flux:table.cell class="text-xs font-medium">
+                            {{ $sm->creator->name ?? 'System' }}
+                        </flux:table.cell>
+                    </flux:table.row>
+                @empty
+                    <flux:table.row>
+                        <flux:table.cell colspan="6" class="text-center py-6 text-zinc-400 text-xs">
+                            Belum ada riwayat pergerakan stok.
                         </flux:table.cell>
                     </flux:table.row>
                 @endforelse
@@ -224,5 +289,45 @@
                 </flux:button>
             </flux:modal.close>
         </div>
+    </flux:modal>
+
+    <!-- Flux Popup Modal: Penyesuaian & Restok Produk -->
+    <flux:modal name="stock-adjustment-modal" class="md:w-[450px] space-y-6">
+        <div>
+            <flux:heading size="lg">Penyesuaian & Restok Barang</flux:heading>
+            <flux:subheading>Input stok masuk dari supplier atau penyesuaian opname untuk <strong class="text-zinc-900 dark:text-white underline">{{ $adj_product_name }}</strong>.</flux:subheading>
+        </div>
+
+        <form wire:submit.prevent="submitStockAdjustment" class="space-y-4 text-xs">
+            <div>
+                <flux:label>Tipe Perubahan Stok</flux:label>
+                <flux:select wire:model="adj_type">
+                    <option value="purchase">Stok Masuk / Pembelian Supplier (+)</option>
+                    <option value="adjustment">Penyesuaian / Stok Opname (+/-)</option>
+                    <option value="return">Retur / Barang Rusak/Expired (-)</option>
+                </flux:select>
+            </div>
+
+            <div>
+                <flux:label>Jumlah Perubahan (Qty)</flux:label>
+                <flux:input type="number" wire:model="adj_qty" required placeholder="Contoh: 10 atau -2" />
+            </div>
+
+            <div>
+                <flux:label>Catatan / Keterangan</flux:label>
+                <flux:input wire:model="adj_notes" placeholder="No. Invoice supplier atau alasan retur..." />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:modal.close>
+                    <flux:button type="submit" variant="primary">
+                        Simpan Penyesuaian
+                    </flux:button>
+                </flux:modal.close>
+            </div>
+        </form>
     </flux:modal>
 </div>

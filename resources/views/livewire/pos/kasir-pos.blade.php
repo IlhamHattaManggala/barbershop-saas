@@ -184,14 +184,55 @@
                     <span class="font-extrabold text-slate-900 font-mono">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                 </div>
 
-                <div class="flex items-center justify-between text-slate-600">
-                    <span class="font-semibold">Metode Pembayaran</span>
-                    <select wire:model.live="payment_method" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:outline-none">
-                        <option value="cash">TUNAI (CASH)</option>
-                        <option value="qris">QRIS / EDC</option>
-                        <option value="transfer">TRANSFER BANK</option>
-                    </select>
+                <!-- Diskon Nominal / Promo Code -->
+                <div class="flex items-center justify-between text-slate-600 gap-2">
+                    <span class="font-semibold">Diskon / Potongan</span>
+                    <div class="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 w-36">
+                        <span class="text-xs font-mono font-bold text-slate-400">Rp</span>
+                        <input type="number" wire:model.live="discount_amount" placeholder="0" class="w-full bg-transparent text-xs font-mono font-bold text-right text-rose-600 focus:outline-none" />
+                    </div>
                 </div>
+
+                <!-- Split Payment Toggle -->
+                <div class="flex items-center justify-between text-slate-600 pt-1 border-t border-slate-100">
+                    <label class="font-semibold flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" wire:model.live="is_split_payment" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                        <span>Gunakan Split Payment (2 Metode)</span>
+                    </label>
+                </div>
+
+                @if(!$is_split_payment)
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span class="font-semibold">Metode Pembayaran</span>
+                        <select wire:model.live="payment_method" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:outline-none">
+                            <option value="cash">TUNAI (CASH)</option>
+                            <option value="qris">QRIS / EDC</option>
+                            <option value="transfer">TRANSFER BANK</option>
+                        </select>
+                    </div>
+                @else
+                    <div class="p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-2 text-xs">
+                        <div class="font-bold text-indigo-900">Pembayaran 1 (Utama)</div>
+                        <div class="flex items-center gap-2">
+                            <select wire:model.live="payment_method" class="bg-white border border-indigo-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-900 w-1/2">
+                                <option value="cash">TUNAI (CASH)</option>
+                                <option value="qris">QRIS</option>
+                                <option value="transfer">TRANSFER</option>
+                            </select>
+                            <input type="number" wire:model.live="cash_paid" placeholder="Jumlah 1" class="bg-white border border-indigo-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-right w-1/2" />
+                        </div>
+
+                        <div class="font-bold text-indigo-900 pt-1">Pembayaran 2 (Campuran)</div>
+                        <div class="flex items-center gap-2">
+                            <select wire:model.live="second_payment_method" class="bg-white border border-indigo-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-900 w-1/2">
+                                <option value="qris">QRIS</option>
+                                <option value="transfer">TRANSFER</option>
+                                <option value="cash">TUNAI</option>
+                            </select>
+                            <input type="number" wire:model.live="second_payment_amount" placeholder="Jumlah 2" class="bg-white border border-indigo-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-right w-1/2" />
+                        </div>
+                    </div>
+                @endif
 
                 @php
                     $tenant = auth()->user()->tenant;
